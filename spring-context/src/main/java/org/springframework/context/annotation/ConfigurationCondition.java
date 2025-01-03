@@ -45,6 +45,10 @@ public interface ConfigurationCondition extends Condition {
 		 * class is being parsed.
 		 * <p>If the condition does not match at this point, the {@code @Configuration}
 		 * class will not be added.
+		 * <br/>
+		 *
+		 *  在这个阶段，条件应该评估@Configuration类。如果条件不匹配，则@Configuration类不会被添加
+		 *  即：配置类是否满足条件？ 是 - 配置类会被添加，否 - 配置类将不生效
 		 */
 		PARSE_CONFIGURATION,
 
@@ -54,6 +58,9 @@ public interface ConfigurationCondition extends Condition {
 		 * {@code @Configuration} classes from being added.
 		 * <p>At the time that the condition is evaluated, all {@code @Configuration}
 		 * classes will have been parsed.
+		 * <br/>
+		 *
+		 * TODO : ConfigurationPhase.REGISTER_BEAN解释不够明白：在这个阶段，条件不会阻止@Configuration类的添加，所有@Configurations都会被解析，但条件评估是在注册Bean时进行的‌
 		 */
 		REGISTER_BEAN
 	}

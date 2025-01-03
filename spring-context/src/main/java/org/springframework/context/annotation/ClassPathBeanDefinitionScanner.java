@@ -16,17 +16,10 @@
 
 package org.springframework.context.annotation;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
-import org.springframework.beans.factory.support.AbstractBeanDefinition;
-import org.springframework.beans.factory.support.BeanDefinitionDefaults;
-import org.springframework.beans.factory.support.BeanDefinitionReaderUtils;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanNameGenerator;
+import org.springframework.beans.factory.support.*;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.EnvironmentCapable;
 import org.springframework.core.env.StandardEnvironment;
@@ -34,6 +27,9 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.PatternMatchUtils;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * A bean definition scanner that detects bean candidates on the classpath,
@@ -59,6 +55,13 @@ import org.springframework.util.PatternMatchUtils;
  * @see org.springframework.stereotype.Repository
  * @see org.springframework.stereotype.Service
  * @see org.springframework.stereotype.Controller
+ *
+ * <br/
+ * 扫描指定包路径下的所有class：
+ * 	  1、将【符合条件】的class封装为BeanDefinition
+ * 	  2、根据class上的注解完善BeanDefinition信息
+ * 	  3、将完善后的BeanDefinition注册到BeanFactory
+ *
  */
 public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateComponentProvider {
 
@@ -163,6 +166,10 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 		this.registry = registry;
 
 		if (useDefaultFilters) {
+			/*
+			includeFilters使用默认配置
+			excludeFilters为空
+			 */
 			registerDefaultFilters();
 		}
 		setEnvironment(environment);
@@ -247,14 +254,31 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * Perform a scan within the specified base packages.
 	 * @param basePackages the packages to check for annotated classes
 	 * @return number of beans registered
+	 *
+	 * 扫描指定包路径下的所有class，将符合条件的class封装为BeanDefinition注册到BeanFactory中
 	 */
 	public int scan(String... basePackages) {
 		int beanCountAtScanStart = this.registry.getBeanDefinitionCount();
 
+		//扫描指定路径下满足条件的class，并注册到BeanFactory中
 		doScan(basePackages);
 
 		// Register annotation config processors, if necessary.
 		if (this.includeAnnotationConfig) {
+			/*
+			向beanFactory中注册与注解处理相关的后置处理器（重复将会忽略）：
+		  	  BeanFactoryPostProcessor：
+		      	1、ConfigurationClassPostProcessor：** 重要 **
+		      	2、EventListenerMethodProcessor
+		      	3、PersistenceAnnotationBeanPostProcessor
+		  	 BeanPostProcessor：
+		      	1、AutowiredAnnotationBeanPostProcessor
+		      	2、CommonAnnotationBeanPostProcessor
+		  	 other：
+		      	1、DefaultEventListenerFactory
+		      	2、AnnotationAwareOrderComparator
+		      	3、ContextAnnotationAutowireCandidateResolver
+		   */
 			AnnotationConfigUtils.registerAnnotationConfigProcessors(this.registry);
 		}
 
@@ -268,23 +292,47 @@ public class ClassPathBeanDefinitionScanner extends ClassPathScanningCandidateCo
 	 * but rather leaves this up to the caller.
 	 * @param basePackages the packages to check for annotated classes
 	 * @return set of beans registered if any for tooling registration purposes (never {@code null})
+	 *
+	 * 扫描多个包路径下的所有class：
+	 *    1、将符合条件的class封装为BeanDefinition
+	 *    2、根据class上的注解完善BeanDefinition信息
+	 *    3、将完善后的BeanDefinition注册到BeanFactory
 	 */
 	protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
 		Assert.notEmpty(basePackages, "At least one base package must be specified");
 		Set<BeanDefinitionHolder> beanDefinitions = new LinkedHashSet<>();
 		for (String basePackage : basePackages) {
+			//获取包路径下所有符合条件的class的BeanDefinition，详情ClassPathScanningCandidateComponentProvider#findCandidateComponents
 			Set<BeanDefinition> candidates = findCandidateComponents(basePackage);
 			for (BeanDefinition candidate : candidates) {
 				ScopeMetadata scopeMetadata = this.scopeMetadataResolver.resolveScopeMetadata(candidate);
 				candidate.setScope(scopeMetadata.getScopeName());
 				String beanName = this.beanNameGenerator.generateBeanName(candidate, this.registry);
 				if (candidate instanceof AbstractBeanDefinition abstractBeanDefinition) {
+					//设置 BeanDefinition#setAutowireCandidate
 					postProcessBeanDefinition(abstractBeanDefinition, beanName);
 				}
 				if (candidate instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
+					/*
+					通用注解处理设置BeanDefinition信息：
+					1、BeanDefinition#setLazyInit：@Lazy
+					2、BeanDefinition#setPrimary：@Primary
+					3、BeanDefinition#setDependsOn：@DependsOn
+					4、BeanDefinition#setRole：@Role
+					5、BeanDefinition#setDescription：@Description
+					6、BeanDefinition#addQualifier：qualifiers （除了@Primary、@Lazy）
+					7、BeanDefinitionCustomizer：customizers对beanDefinition进行额外的逻辑处理
+					 */
 					AnnotationConfigUtils.processCommonDefinitionAnnotations(annotatedBeanDefinition);
 				}
 				if (checkCandidate(beanName, candidate)) {
+					/*
+					注册新BeanDefinition：
+					若bean无需代理，直接注册：beanName=abd（BeanDefinition）
+					若bean需要代理：
+		     			1、注册原始BeanDefinition：newBeanName("scopedTarget." + beanName) = abd（BeanDefinition）
+		     			2、然后注册代理BeanDefinition：beanName = proxyBeanDefinition（beanClass=ScopedProxyFactoryBean并且携带abd【原BeanDefinition】）
+					 */
 					BeanDefinitionHolder definitionHolder = new BeanDefinitionHolder(candidate, beanName);
 					definitionHolder =
 							AnnotationConfigUtils.applyScopedProxyMode(scopeMetadata, definitionHolder, this.registry);

@@ -16,10 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -38,12 +34,20 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.MultiValueMap;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Internal class used to evaluate {@link Conditional} annotations.
  *
  * @author Phillip Webb
  * @author Juergen Hoeller
  * @since 4.0
+ *
+ * <br/>
+ * 用于处理class上@Conditional注解：
+ *      通过上下文（Environment、ApplicationContext、BeanFactory） + 扩展@Conditional类注解 = 判断是否符合条件
  */
 class ConditionEvaluator {
 
@@ -66,6 +70,10 @@ class ConditionEvaluator {
 	 * {@code @Configuration} class will be {@link ConfigurationPhase#PARSE_CONFIGURATION})
 	 * @param metadata the meta data
 	 * @return if the item should be skipped
+	 *
+	 * <br/>
+	 * 通过类上含有的@Ciondtional注解判断此类是否满足条件（不满足将不处理）
+	 * 当该类上含有@Configuration注解，从类型上会判断出：phase=ConfigurationPhase.PARSE_CONFIGURATION
 	 */
 	public boolean shouldSkip(AnnotatedTypeMetadata metadata) {
 		return shouldSkip(metadata, null);
@@ -76,23 +84,40 @@ class ConditionEvaluator {
 	 * @param metadata the meta data
 	 * @param phase the phase of the call
 	 * @return if the item should be skipped
+	 *
+	 * <br/>
+	 * 根据类上的@Conditional注解判断该类是否满足条件（不满足将不处理）
 	 */
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
+
+		//类没有注解 或 没有含@Conditional注解，则不处理（默认视为满足条件）
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
 			return false;
 		}
 
+		/*
+		根据类元数据推断出phase的值后才能进行判断
+		  phase为null时，若满足如下2个条件：
+		     1、类上有@Component、@ComponentScan、@Import、@ImportResource注解
+		     2、或类中的方法含有@Bean注解
+		  则phase=ConfigurationPhase.PARSE_CONFIGURATION，即该类作为配置类处理
+		  否则作为普通bean类处理（phase=ConfigurationPhase.REGISTER_BEAN）
+		 */
 		if (phase == null) {
 			if (metadata instanceof AnnotationMetadata annotationMetadata &&
 					ConfigurationClassUtils.isConfigurationCandidate(annotationMetadata)) {
+				//判断配置类是否满足条件？
 				return shouldSkip(metadata, ConfigurationPhase.PARSE_CONFIGURATION);
 			}
+			//判断bean类是否满足条件？ 是 - 注册
 			return shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN);
 		}
 
+		//获取类上的所有@Conditional注解，获取其value值，将其实例化
 		List<Condition> conditions = new ArrayList<>();
 		for (String[] conditionClasses : getConditionClasses(metadata)) {
 			for (String conditionClass : conditionClasses) {
+				//根据类名称实例化Condition
 				Condition condition = getCondition(conditionClass, this.context.getClassLoader());
 				conditions.add(condition);
 			}
@@ -105,6 +130,8 @@ class ConditionEvaluator {
 			if (condition instanceof ConfigurationCondition configurationCondition) {
 				requiredPhase = configurationCondition.getConfigurationPhase();
 			}
+
+			//不满足，不处理该类（跳过）
 			if ((requiredPhase == null || requiredPhase == phase) && !condition.matches(this.context, metadata)) {
 				return true;
 			}

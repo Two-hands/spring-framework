@@ -40,6 +40,10 @@ import org.springframework.util.Assert;
  * @see org.springframework.beans.factory.support.DefaultBeanNameGenerator
  * @see AnnotationBeanNameGenerator
  * @see ConfigurationClassPostProcessor#IMPORT_BEAN_NAME_GENERATOR
+ *
+ * 若给定BeanDefinition锁指代的Class上没有标注指定注解或注解的value值无效，使用默认构建beanName时，
+ * 可以通过不同策略构建beanName，此类是讲Class的全限定类名作为beanName
+ *
  */
 public class FullyQualifiedAnnotationBeanNameGenerator extends AnnotationBeanNameGenerator {
 

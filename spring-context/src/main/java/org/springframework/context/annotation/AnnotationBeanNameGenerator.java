@@ -16,11 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
@@ -31,6 +26,11 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link BeanNameGenerator} implementation for bean classes annotated with the
@@ -60,6 +60,15 @@ import org.springframework.util.StringUtils;
  * @see org.springframework.stereotype.Controller#value()
  * @see jakarta.inject.Named#value()
  * @see FullyQualifiedAnnotationBeanNameGenerator
+ *
+ *
+ * <br/>
+ * BeanNameGenerator的实现类，用于根据@Component注解或其他注解（该注解含有@Comopnent注解，如：Srping的原生注解@Repository，它含有@Component注解）
+ * 此外，还支持如@ManagedBean和@Named（注意：若这2个注解与Spring原生注解【如：@Component、@Repository、@Service】一起使用，前者不生效）；
+ * 如果注解没有指明名称（如：@Component#value()），则默认使用类名称（首字母小写，但前两个字母都大写则不变小写），如：
+ *    1、com.xyz.FooServiceImpl  -> fooServiceImpl  （去掉包路径，类名首字母小写，驼峰）
+ *    2、com.xyz.URLFooServiceImpl -> URLFooServiceImpl （去掉包路径，前两个字母均大写，类名首字母不用小写）
+ *
  */
 public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 
@@ -70,6 +79,9 @@ public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 	 */
 	public static final AnnotationBeanNameGenerator INSTANCE = new AnnotationBeanNameGenerator();
 
+	/**
+	 * 指明根据哪个注解获取名称
+	 */
 	private static final String COMPONENT_ANNOTATION_CLASSNAME = "org.springframework.stereotype.Component";
 
 	private final Map<String, Set<String>> metaAnnotationTypesCache = new ConcurrentHashMap<>();
@@ -77,6 +89,8 @@ public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 
 	@Override
 	public String generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry) {
+
+		//先通过注解获取beanName
 		if (definition instanceof AnnotatedBeanDefinition annotatedBeanDefinition) {
 			String beanName = determineBeanNameFromAnnotation(annotatedBeanDefinition);
 			if (StringUtils.hasText(beanName)) {
@@ -85,6 +99,7 @@ public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 			}
 		}
 		// Fallback: generate a unique default bean name.
+		//注解中无法获取beanName或获取结果为空串，则为bean构建一个默认的beanName
 		return buildDefaultBeanName(definition, registry);
 	}
 
@@ -96,15 +111,26 @@ public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 	@Nullable
 	protected String determineBeanNameFromAnnotation(AnnotatedBeanDefinition annotatedDef) {
 		AnnotationMetadata amd = annotatedDef.getMetadata();
+		//获取Class（annotatedDef包含的Class）上直接标注的所有注解【这些注解有@Retention标注并且为RetentionPolicy.RUNTIME】
 		Set<String> types = amd.getAnnotationTypes();
 		String beanName = null;
+		//遍历直接标注的所有注解
 		for (String type : types) {
+			//获取每个注解的所有属性（不包含注解上的元注解的属性）
 			AnnotationAttributes attributes = AnnotationConfigUtils.attributesFor(amd, type);
 			if (attributes != null) {
+				//解析注解的所有元注解（级联方式获取元注解的元注解），并将解析结果缓存起来：以key（注解） -> value（注解的元注解）
+				//如：@Configuration -> [@Component、@Indexed]
 				Set<String> metaTypes = this.metaAnnotationTypesCache.computeIfAbsent(type, key -> {
 					Set<String> result = amd.getMetaAnnotationTypes(key);
 					return (result.isEmpty() ? Collections.emptySet() : result);
 				});
+				/*
+				   判断注解和元注解是否含有指定注解，若有，则获取该注解的value值作为beanName（不能是空串）
+				   type：Class类上的其中一个注解（A）
+				   metaTypes 注解（A）上的所有元注解
+				   attributes：注解（A）的所有属性
+				 */
 				if (isStereotypeWithNameValue(type, metaTypes, attributes)) {
 					Object value = attributes.get("value");
 					if (value instanceof String strVal && !strVal.isEmpty()) {
@@ -127,6 +153,15 @@ public class AnnotationBeanNameGenerator implements BeanNameGenerator {
 	 * @param metaAnnotationTypes the names of meta-annotations on the given annotation
 	 * @param attributes the map of attributes for the given annotation
 	 * @return whether the annotation qualifies as a stereotype with component name
+	 *
+	 * <br/>
+	 * 是否可以根据注解属性值作为beanName?
+	 *   1、优先判断注解是否为@Component
+	 *   2、步骤1不满足判断注解的元注解中是否包含@Component
+	 *   3、步骤1、2不满足则判断注解是否为@ManagedBean
+	 *   4、步骤1、2、3不满足则判断注解是否为@Named
+	 * 若上述条件都不满足，则无法通过注解信息作为beanName
+	 * 若上述条件满足一个，且注解含有value属性值，则把该值作为beanName
 	 */
 	protected boolean isStereotypeWithNameValue(String annotationType,
 			Set<String> metaAnnotationTypes, @Nullable Map<String, Object> attributes) {

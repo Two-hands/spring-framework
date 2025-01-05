@@ -23,6 +23,11 @@ import org.springframework.beans.factory.config.BeanDefinition;
  *
  * @author Juergen Hoeller
  * @since 2.0.3
+ *
+ * <br/>
+ *
+ *  ** 策略模式 **
+ * 为BeanDefinition生成beanName的生成器（一般是注册到BeanFactory时没有指定beanName时使用）
  */
 public interface BeanNameGenerator {
 
@@ -32,6 +37,11 @@ public interface BeanNameGenerator {
 	 * @param registry the bean definition registry that the given definition
 	 * is supposed to be registered with
 	 * @return the generated bean name
+	 *
+	 * <br/>
+	 *  为BeanDefinition生成beanName：
+	 *   definition：需要为它生成beanName
+	 *   registry：上述给定的BeanDefinition的注册中心
 	 */
 	String generateBeanName(BeanDefinition definition, BeanDefinitionRegistry registry);
 

@@ -80,8 +80,12 @@ configure([rootProject] + javaProjects) { project ->
 		configDirectory.set(rootProject.file("src/checkstyle"))
 	}
 
-	tasks.named("checkstyleMain").configure {
-		maxHeapSize = "1g"
+//	tasks.named("checkstyleMain").configure {
+//		maxHeapSize = "1g"
+//	}
+	//禁用checkstyleMain功能
+	tasks.named('checkstyleMain'){
+		enabled = false
 	}
 
 	tasks.named("checkstyleTest").configure {

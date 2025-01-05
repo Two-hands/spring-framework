@@ -26,6 +26,9 @@ import org.springframework.core.type.ClassMetadata;
  *
  * @author Juergen Hoeller
  * @since 2.5
+ *
+ *  <br/>
+ *  外观模式：用于访问类的元数据，如：类信息、注解信息....
  */
 public interface MetadataReader {
 

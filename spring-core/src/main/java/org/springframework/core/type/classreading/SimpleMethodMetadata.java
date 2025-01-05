@@ -27,20 +27,38 @@ import org.springframework.lang.Nullable;
  * @author Phillip Webb
  * @author Sam Brannen
  * @since 5.2
+ *
+ * <br/>
+ * SimpleMethodMetadataReadingVisitor读取的方法元数据
  */
 final class SimpleMethodMetadata implements MethodMetadata {
 
+	/*
+      方法名称
+	 */
 	private final String methodName;
 
+	/*
+      类的访问权限信息：包含诸如ACC_PUBLIC、ACC_FINAL、ACC_ABSTRACT....
+	 */
 	private final int access;
 
+	/*
+	方法所属类的全限定类名
+	 */
 	private final String declaringClassName;
 
+	/*
+	方法返回类型名称（如果是返回的是引用类型，则为返回类型的全限定类名）
+	 */
 	private final String returnTypeName;
 
 	// The source implements equals(), hashCode(), and toString() for the underlying method.
 	private final Object source;
 
+	/*
+	方法上标注的注解
+	 */
 	private final MergedAnnotations annotations;
 
 

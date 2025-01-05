@@ -1,0 +1,10 @@
+# 预编译spring-oxm： ./gradlew :spring-oxm:compileTestJava
+# 编译所有模块并跳过测试模块（--info 获取详情）：./gradlew build -x test
+# 编译指定模块：./gradlew :spring-context:build
+# 清除所有模块编译内容：./gradlew clean
+# 清除指定模块编译内容：./gradlew :spring-beans:clean
+
+
+# 如果gradlew命令执行一直没有反应：
+## 停止所有gradle后台进程： ./gradlew --stop
+## 删除GRADLE_USER_HOME下的daemon目录

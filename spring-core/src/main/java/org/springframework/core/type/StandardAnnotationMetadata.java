@@ -16,22 +16,18 @@
 
 package org.springframework.core.type;
 
+import org.springframework.core.annotation.*;
+import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
+import org.springframework.lang.Nullable;
+import org.springframework.util.MultiValueMap;
+import org.springframework.util.ReflectionUtils;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.core.annotation.MergedAnnotation;
-import org.springframework.core.annotation.MergedAnnotations;
-import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
-import org.springframework.core.annotation.RepeatableContainers;
-import org.springframework.lang.Nullable;
-import org.springframework.util.MultiValueMap;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * {@link AnnotationMetadata} implementation that uses standard reflection
@@ -43,6 +39,10 @@ import org.springframework.util.ReflectionUtils;
  * @author Phillip Webb
  * @author Sam Brannen
  * @since 2.5
+ *
+ * <br/>
+ * 基于反射实现，提供了更详细的[类元数据信息]，适用于需要详细类信息的场景（用于类已经被加载并且已经有Class对象）
+ * SimpleAnnotationMetadata与StandardAnnotationMetadata明显区别在于：前者没有类的Class对象而后者有
  */
 public class StandardAnnotationMetadata extends StandardClassMetadata implements AnnotationMetadata {
 

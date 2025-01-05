@@ -16,14 +16,14 @@
 
 package org.springframework.core.type.classreading;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
+
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * Simple implementation of the {@link MetadataReaderFactory} interface,
@@ -31,6 +31,8 @@ import org.springframework.util.ClassUtils;
  *
  * @author Juergen Hoeller
  * @since 2.5
+ *
+ * MetadataReaderFactory接口的简单实现，对于给定的类或资源创建一个ClassReader（用于分析.class文件二进制的一个组件）实例
  */
 public class SimpleMetadataReaderFactory implements MetadataReaderFactory {
 
@@ -75,14 +77,19 @@ public class SimpleMetadataReaderFactory implements MetadataReaderFactory {
 	@Override
 	public MetadataReader getMetadataReader(String className) throws IOException {
 		try {
+			// 构建资源的路径：拼接 classpath: + 全限定类名（将.替换为/） + .class
+			// 如：className="org.springframework.Main" -> classpath:org/springframework/Main.class
 			String resourcePath = ResourceLoader.CLASSPATH_URL_PREFIX +
 					ClassUtils.convertClassNameToResourcePath(className) + ClassUtils.CLASS_FILE_SUFFIX;
 			Resource resource = this.resourceLoader.getResource(resourcePath);
+			//根据类资源创建SimpleMetadataReader并返回
 			return getMetadataReader(resource);
 		}
 		catch (FileNotFoundException ex) {
 			// Maybe an inner class name using the dot name syntax? Need to use the dollar syntax here...
 			// ClassUtils.forName has an equivalent check for resolution into Class references later on.
+			//如果资源获取失败：可能是内部类，而内部类与外部内之间可能用英文点（.）分割，需要将其替换为$再进行重新拼接加载
+			//如：如：className="org.springframework.Main.InnerClass" -> classpath:org/springframework/Main$InnerClass.class
 			int lastDotIndex = className.lastIndexOf('.');
 			if (lastDotIndex != -1) {
 				String innerClassName =
@@ -100,6 +107,7 @@ public class SimpleMetadataReaderFactory implements MetadataReaderFactory {
 
 	@Override
 	public MetadataReader getMetadataReader(Resource resource) throws IOException {
+		//根据字节码流解析出AnnotationMetadata
 		return new SimpleMetadataReader(resource, this.resourceLoader.getClassLoader());
 	}
 

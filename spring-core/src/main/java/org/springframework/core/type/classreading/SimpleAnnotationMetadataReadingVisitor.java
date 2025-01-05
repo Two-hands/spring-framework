@@ -16,14 +16,7 @@
 
 package org.springframework.core.type.classreading;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
-import org.springframework.asm.AnnotationVisitor;
-import org.springframework.asm.ClassVisitor;
-import org.springframework.asm.MethodVisitor;
-import org.springframework.asm.Opcodes;
-import org.springframework.asm.SpringAsmInfo;
+import org.springframework.asm.*;
 import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.type.MethodMetadata;
@@ -31,12 +24,18 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 /**
  * ASM class visitor that creates {@link SimpleAnnotationMetadata}.
  *
  * @author Phillip Webb
  * @author Juergen Hoeller
  * @since 5.2
+ *
+ * <br/>
+ * asm中visitor的实现之一：从class文件获取字节码，获取类、注解、方法等（视图）元数据
  */
 final class SimpleAnnotationMetadataReadingVisitor extends ClassVisitor {
 

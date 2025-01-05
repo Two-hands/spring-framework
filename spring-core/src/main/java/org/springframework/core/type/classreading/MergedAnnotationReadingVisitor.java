@@ -16,15 +16,6 @@
 
 package org.springframework.core.type.classreading;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-
 import org.springframework.asm.AnnotationVisitor;
 import org.springframework.asm.SpringAsmInfo;
 import org.springframework.asm.Type;
@@ -33,6 +24,11 @@ import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.util.*;
+import java.util.function.Consumer;
+
 /**
  * {@link AnnotationVisitor} that can be used to construct a
  * {@link MergedAnnotation}.
@@ -40,6 +36,9 @@ import org.springframework.util.ClassUtils;
  * @author Phillip Webb
  * @since 5.2
  * @param <A> the annotation type
+ *
+ *  <br/>
+ *  获取注解（视图）元数据，在SimpleAnnotationMetadataReadingVisitor中用于获取注解（视图）元数据
  */
 class MergedAnnotationReadingVisitor<A extends Annotation> extends AnnotationVisitor {
 

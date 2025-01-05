@@ -16,14 +16,14 @@
 
 package org.springframework.core.type.classreading;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import org.springframework.asm.ClassReader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.ClassMetadata;
 import org.springframework.lang.Nullable;
+
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * {@link MetadataReader} implementation based on an ASM
@@ -32,6 +32,9 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @author Costin Leau
  * @since 2.5
+ *
+ * <br/>
+ * 用于读取访问元数据：通过SimpleAnnotationMetadataReadingVisitor获取类元数据部分视图，然后返回视图信息
  */
 final class SimpleMetadataReader implements MetadataReader {
 
@@ -40,11 +43,22 @@ final class SimpleMetadataReader implements MetadataReader {
 
 	private final Resource resource;
 
+	/**
+	 * 根据字节码文件解析出的结果
+	 */
 	private final AnnotationMetadata annotationMetadata;
 
-
+	/**
+	 * 通过读取字节码二进制流数据，记录重要数据的偏移量，并使用visitor结合偏移量信息获取Class类的元数据
+	 * Class类的元数据包含但不限于：类上的注解信息、类名称信息、类访问信息、超类信息、接口信息、成员类信息、方法信息...
+	 * @param resource Class类资源（用于获取Class的二进制流数据）
+	 * @param classLoader 类加载器
+	 * @throws IOException io异常
+	 */
 	SimpleMetadataReader(Resource resource, @Nullable ClassLoader classLoader) throws IOException {
+
 		SimpleAnnotationMetadataReadingVisitor visitor = new SimpleAnnotationMetadataReadingVisitor(classLoader);
+		//解析Class二进制流数据，获取字节码文件信息视图数据
 		getClassReader(resource).accept(visitor, PARSING_OPTIONS);
 		this.resource = resource;
 		this.annotationMetadata = visitor.getMetadata();

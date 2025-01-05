@@ -36,12 +36,17 @@ package org.springframework.asm;
  * {@code visitEnd}.
  *
  * @author Eric Bruneton
+ *
+ * <br/>
+ * 用于读取字节码文件内容（此时字节码可能还未被类加载器加载）：定义在读取Class字节码时会触发的事件
  */
 public abstract class ClassVisitor {
 
   /**
    * The ASM API version implemented by this visitor. The value of this field must be one of the
    * {@code ASM}<i>x</i> values in {@link Opcodes}.
+   *
+   * 指定asm api的版本
    */
   protected final int api;
 
@@ -106,6 +111,15 @@ public abstract class ClassVisitor {
    *     {@link Object} class.
    * @param interfaces the internal names of the class's interfaces (see {@link
    *     Type#getInternalName()}). May be {@literal null}.
+   *
+   * <br/>
+   * 读取字节码的头部信息：
+   *    version: 字节码版本信息，包含主版本（major）和次版本（minor）
+   *    access： 类的访问信息，如：public、static、final...
+   *    name：类的全限定类名（.全替换为/）
+   *    signature：类的签名（要该类涉及到泛型定义时才有）
+   *    superName：类的直接父类的全限定类名（.全替换为/）
+   *    interfaces：类实现的接口的全限定类名（.全替换为/）
    */
   public void visit(
       final int version,

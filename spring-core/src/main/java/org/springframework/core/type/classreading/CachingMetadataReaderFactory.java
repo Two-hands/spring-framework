@@ -16,15 +16,15 @@
 
 package org.springframework.core.type.classreading;
 
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.lang.Nullable;
+
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Caching implementation of the {@link MetadataReaderFactory} interface,
@@ -34,6 +34,11 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @author Costin Leau
  * @since 2.5
+ *
+ * <br/>
+ *  SimpleMetadataReaderFactory的扩展类，将读取过的MetaDataReader缓存起来
+ *
+ *  工厂方法模式 + 策略模式
  */
 public class CachingMetadataReaderFactory extends SimpleMetadataReaderFactory {
 

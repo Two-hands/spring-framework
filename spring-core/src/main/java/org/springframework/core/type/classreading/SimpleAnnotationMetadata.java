@@ -16,16 +16,16 @@
 
 package org.springframework.core.type.classreading;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.springframework.asm.Opcodes;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringUtils;
+
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * {@link AnnotationMetadata} created from a
@@ -35,29 +35,59 @@ import org.springframework.util.StringUtils;
  * @author Sam Brannen
  * @author Juergen Hoeller
  * @since 5.2
+ *
+ * <br/>
+ * 基于ASM，主要用于快速获取类上的[注解信息]，适用于需要快速解析注解的场景（用于类还未被加载，无需加载类提前解析到部分数据）
+ * SimpleAnnotationMetadata与StandardAnnotationMetadata明显区别在于：前者没有类的Class对象而后者有
+ *
+ * 不需要加载类和方法的所有数据，不涉及类的加载；如果有注解，需要加载注解类（注解类非常较少，不会影响性能）
  */
 final class SimpleAnnotationMetadata implements AnnotationMetadata {
 
+	/*
+	类的全限定类名
+	 */
 	private final String className;
 
+	/*
+	类的访问权限信息：包含诸如ACC_PUBLIC、ACC_FINAL、ACC_SUPER、ACC_INTERFACE、ACC_ABSTRACT、ACC_SYNTHETIC、ACC_ANNOTATION、ACC_ENUM....
+	 */
 	private final int access;
 
 	@Nullable
 	private final String enclosingClassName;
 
+	/*
+	直接继承的父类
+	 */
 	@Nullable
 	private final String superClassName;
 
 	private final boolean independentInnerClass;
 
+	/*
+	直接实现的接口
+	 */
 	private final Set<String> interfaceNames;
 
+	/*
+	类中包含的所有内部类：包含静态内部类（static修饰）和普通的内部类（非static修饰）
+	 */
 	private final Set<String> memberClassNames;
 
+	/*
+	类中直接声明的所有方法（包含方法[创建]的匿名对象所声明的新方法），不包含方法中局部类（方法中声明的类）
+	 */
 	private final Set<MethodMetadata> declaredMethods;
 
+	/*
+	类上标注的注解
+	 */
 	private final MergedAnnotations annotations;
 
+	/*
+	注解全限定类名集合
+	 */
 	@Nullable
 	private Set<String> annotationTypes;
 

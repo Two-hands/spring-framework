@@ -16,10 +16,6 @@
 
 package org.springframework.core.type.classreading;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
 import org.springframework.asm.AnnotationVisitor;
 import org.springframework.asm.MethodVisitor;
 import org.springframework.asm.SpringAsmInfo;
@@ -28,6 +24,10 @@ import org.springframework.core.annotation.MergedAnnotation;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
  * ASM method visitor that creates {@link SimpleMethodMetadata}.
  *
@@ -35,6 +35,9 @@ import org.springframework.lang.Nullable;
  * @author Sam Brannen
  * @author Juergen Hoeller
  * @since 5.2
+ *
+ * <br/>
+ * 获取方法（视图）元数据，在SimpleAnnotationMetadataReadingVisitor中用于获取方法（视图）元数据
  */
 final class SimpleMethodMetadataReadingVisitor extends MethodVisitor {
 

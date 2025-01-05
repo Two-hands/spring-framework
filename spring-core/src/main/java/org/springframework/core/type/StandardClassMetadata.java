@@ -16,12 +16,12 @@
 
 package org.springframework.core.type;
 
-import java.lang.reflect.Modifier;
-import java.util.LinkedHashSet;
-
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Modifier;
+import java.util.LinkedHashSet;
 
 /**
  * {@link ClassMetadata} implementation that uses standard reflection
@@ -30,6 +30,9 @@ import org.springframework.util.StringUtils;
  * @author Juergen Hoeller
  * @author Sam Brannen
  * @since 2.5
+ *
+ * <br/>
+ * 基于反射实现，提供了更详细的[类元数据信息]，适用于需要详细类信息的场景（用于类已经被加载并且已经有Class对象）
  */
 public class StandardClassMetadata implements ClassMetadata {
 

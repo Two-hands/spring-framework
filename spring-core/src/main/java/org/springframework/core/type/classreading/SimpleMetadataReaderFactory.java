@@ -32,7 +32,8 @@ import java.io.IOException;
  * @author Juergen Hoeller
  * @since 2.5
  *
- * MetadataReaderFactory接口的简单实现，对于给定的类或资源创建一个ClassReader（用于分析.class文件二进制的一个组件）实例
+ * MetadataReaderFactory接口的简单实现，可根据全限定类名定位字节码文件，并通过文件资源创建SimpleMetadataReader对象
+ *
  */
 public class SimpleMetadataReaderFactory implements MetadataReaderFactory {
 

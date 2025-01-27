@@ -35,6 +35,9 @@ import java.io.InputStream;
  *
  * <br/>
  * 用于读取访问元数据：通过SimpleAnnotationMetadataReadingVisitor获取类元数据部分视图，然后返回视图信息
+ * 通过ASM框架读取class元数比直接通过类加载器加载class相比优势在于：
+ *   1、在某些情况下，只需要class部分元数据，使用asm更高效（无需将类完全加载，加载涉及到动态链接，父类、接口等关联信息的联动加载）
+ *   2、某个类的内部类可能涉及到或依赖到的其他类可能并无法加载（类无法找到），asm可避免此类问题（类加载器加载class类无法避免这个问题）
  */
 final class SimpleMetadataReader implements MetadataReader {
 

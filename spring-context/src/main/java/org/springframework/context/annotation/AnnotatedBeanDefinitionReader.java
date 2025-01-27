@@ -228,6 +228,9 @@ public class AnnotatedBeanDefinitionReader {
 	 * 3、qualifiers ：额外的注解信息，用于完善BeanDefinition数据
 	 * 4、supplier bean实例化的时候调用该函数获取实例（可以自定义复杂的实例化bean逻辑）
 	 * 5、customizers：额外的BeanDefinition配置类，可以进一步丰富BeanDefinition数据
+	 *
+	 * ** 注意：通过AnnotatedBeanDefinitionReader#registerBean注册的所有bean，都默认将其作为lite模式的配置类 **
+	 * ** 配置类在ConfigurationClassPostProcessor中进行解析处理 **
 	 */
 	private <T> void doRegisterBean(Class<T> beanClass, @Nullable String name,
 			@Nullable Class<? extends Annotation>[] qualifiers, @Nullable Supplier<T> supplier,
@@ -239,7 +242,7 @@ public class AnnotatedBeanDefinitionReader {
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
-
+		//设置该类的为Configuration（配置类 - lite模式）候选者
 		abd.setAttribute(ConfigurationClassUtils.CANDIDATE_ATTRIBUTE, Boolean.TRUE);
 		abd.setInstanceSupplier(supplier);
 		/*

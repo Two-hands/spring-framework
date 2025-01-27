@@ -16,14 +16,6 @@
 
 package org.springframework.beans.factory.support;
 
-import java.lang.reflect.Constructor;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
-
 import org.springframework.beans.BeanMetadataAttributeAccessor;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -37,6 +29,10 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.reflect.Constructor;
+import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Base class for concrete, full-fledged {@link BeanDefinition} classes,
@@ -54,6 +50,10 @@ import org.springframework.util.StringUtils;
  * @see GenericBeanDefinition
  * @see RootBeanDefinition
  * @see ChildBeanDefinition
+ *
+ *
+ * <br/>
+ * 具体、完整的BeanDefinition类的基类，抽出BeanDefinition（GenericBeanDefinition、RootBeanDefinition、ChildBeanDefinition）的通用属性
  */
 @SuppressWarnings("serial")
 public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccessor
@@ -138,30 +138,70 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final String INFER_METHOD = "(inferred)";
 
 
+	/*
+	关于bean的类信息：可以是类的全限定类名或者Class对象
+	 */
 	@Nullable
 	private volatile Object beanClass;
 
+	/*
+	bean的可用域：默认是""（unknown）
+	 */
 	@Nullable
 	private String scope = SCOPE_DEFAULT;
 
+	/*
+	bean是否能实例化？
+	 */
 	private boolean abstractFlag = false;
 
+	/*
+	 bean是否要延迟初始化
+	 */
 	@Nullable
 	private Boolean lazyInit;
 
+	/*
+	 * 自动注入模式？
+	    1、AUTOWIRE_NO - 不需要注入
+	    2、AUTOWIRE_BY_NAME - 按名称注入
+	    3、AUTOWIRE_BY_TYPE - 按类型注入
+	    4、AUTOWIRE_CONSTRUCTOR - 按构造器参数注入
+	    5、AUTOWIRE_AUTODETECT - 自动检测（有默认构造器就按类型，否则按构造器）
+	 */
 	private int autowireMode = AUTOWIRE_NO;
 
+	/*
+	依赖检查模式？
+	   1、DEPENDENCY_CHECK_NONE - 不需要依赖检查
+	   2、DEPENDENCY_CHECK_OBJECTS - 引用类型的依赖检查
+	   3、DEPENDENCY_CHECK_SIMPLE - 简单类型依赖检查（具体看：org.springframework.beans.BeanUtils#isSimpleProperty）
+	   4、DEPENDENCY_CHECK_ALL - 所有类型依赖检查（引用、简单类型）
+	 */
 	private int dependencyCheck = DEPENDENCY_CHECK_NONE;
 
+	/*
+	bean需要依赖的其他bean名称：这些被此bean依赖的其他bean要优先初始化
+	 */
 	@Nullable
 	private String[] dependsOn;
 
+	/*
+	是否按类型匹配方式被其他bean注入
+	 */
 	private boolean autowireCandidate = true;
 
+	/*
+	bean是否优先被其他bean注入
+	 */
 	private boolean primary = false;
+
 
 	private final Map<String, AutowireCandidateQualifier> qualifiers = new LinkedHashMap<>();
 
+	/*
+	获取bean实例，该函数可用于获取bean实例（可能包含bean实例化）
+	 */
 	@Nullable
 	private Supplier<?> instanceSupplier;
 
@@ -178,6 +218,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	@Nullable
 	private ConstructorArgumentValues constructorArgumentValues;
 
+	/*
+	bean的其他属性
+	 */
 	@Nullable
 	private MutablePropertyValues propertyValues;
 
@@ -1177,6 +1220,9 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	 * marking it as not overloaded if none found.
 	 * @param mo the MethodOverride object to validate
 	 * @throws BeanDefinitionValidationException in case of validation failure
+	 *
+	 * <br/>
+	 * 校验类的给定方法是否存在，若不存在则异常，若存在并且该方法个数只有一个，则方法标记为未重载
 	 */
 	protected void prepareMethodOverride(MethodOverride mo) throws BeanDefinitionValidationException {
 		int count = ClassUtils.getMethodCountForName(getBeanClass(), mo.getMethodName());
@@ -1187,6 +1233,7 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 		}
 		else if (count == 1) {
 			// Mark override as not overloaded, to avoid the overhead of arg type checking.
+			//若指定方法只有一个，则标记方法为未重载
 			mo.setOverloaded(false);
 		}
 	}

@@ -34,17 +34,37 @@ import org.springframework.aop.TargetSource;
  * @author Juergen Hoeller
  * @since 13.03.2003
  * @see org.springframework.aop.framework.AdvisedSupport
+ *
+ *
+ * <br/>
+ * 实现此接口的类将拥有"操作和管理"AOP工厂代理配置，包括：拦截器（interceptors）、通知（advice）、代理接口（interfaces - 被增强的接口）
+ * 从Spring中获取的所有OP代理都可以被强制转换成Advised类型进行操作：
+ *    1、是否
+ *    2、获取目标对象和类型（功能继承自TargetClassAware）
+ *    3、操作和管理Advisor、Advice
+ *
+ *  ** 如果向Advised中添加Adivice，最终会转换为Advisor（如：DefaultIntroductionAdvisor、DefaultPointcutAdvisor...）进行保存**
+ *
+ * Advice（通知）：表示在特定的连接点（join point）上采取的操作
+ * Advisor（通知者）：Advisor充当Advice和Pointcut的适配器（Advisor持有Advice‌）
+ * Advised（配置）：提供了操作和管理Advice和Advisor的能力
  */
 public interface Advised extends TargetClassAware {
 
 	/**
 	 * Return whether the Advised configuration is frozen,
 	 * in which case no advice changes can be made.
+	 *
+	 * <br/>
+	 * 冻结配置？ true - 配置被冻结，无法再添加或移除Advisor
 	 */
 	boolean isFrozen();
 
 	/**
 	 * Are we proxying the full target class instead of specified interfaces?
+	 *
+	 * <br/>
+	 * 直接代理目标类？true - 不会代理接口，通常使用CGLIB方式代理
 	 */
 	boolean isProxyTargetClass();
 
@@ -57,6 +77,9 @@ public interface Advised extends TargetClassAware {
 	/**
 	 * Determine whether the given interface is proxied.
 	 * @param intf the interface to check
+	 *
+	 * <br/>
+	 * 是否有代理某个具体的接口？ true - 代理了具体的"intf"接口
 	 */
 	boolean isInterfaceProxied(Class<?> intf);
 
@@ -69,6 +92,9 @@ public interface Advised extends TargetClassAware {
 
 	/**
 	 * Return the {@code TargetSource} used by this {@code Advised} object.
+	 *
+	 * <br/>
+	 * 获取目标对象
 	 */
 	TargetSource getTargetSource();
 
@@ -79,6 +105,9 @@ public interface Advised extends TargetClassAware {
 	 * to invoke a method on itself with advice applied. Otherwise, if an
 	 * advised object invokes a method on {@code this}, no advice will be applied.
 	 * <p>Default is {@code false}, for optimal performance.
+	 *
+	 * <br/>
+	 * 设置是否需要保留代理对象
 	 */
 	void setExposeProxy(boolean exposeProxy);
 
@@ -89,6 +118,9 @@ public interface Advised extends TargetClassAware {
 	 * advised object invokes a method on {@code this}, no advice will be applied.
 	 * <p>Getting the proxy is analogous to an EJB calling {@code getEJBObject()}.
 	 * @see AopContext
+	 *
+	 * <br/>
+	 * 暴露代理对象？ true - 暴露代理对象
 	 */
 	boolean isExposeProxy();
 

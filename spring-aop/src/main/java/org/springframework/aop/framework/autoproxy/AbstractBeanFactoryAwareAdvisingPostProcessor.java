@@ -52,9 +52,12 @@ public abstract class AbstractBeanFactoryAwareAdvisingPostProcessor extends Abst
 	@Override
 	protected ProxyFactory prepareProxyFactory(Object bean, String beanName) {
 		if (this.beanFactory != null) {
+			//BeanDefinition中添加attribute=AutoProxyUtils.ORIGINAL_TARGET_CLASS_ATTRIBUTE
 			AutoProxyUtils.exposeTargetClass(this.beanFactory, beanName, bean.getClass());
 		}
 
+		//如果proxyFactory.isProxyTargetClass=true，根据beanName获取BeanDefinition判断其attribute中
+		//AutoProxyUtils.PRESERVE_TARGET_CLASS_ATTRIBUTE=true？如果是，则设置直接代理目标类
 		ProxyFactory proxyFactory = super.prepareProxyFactory(bean, beanName);
 		if (!proxyFactory.isProxyTargetClass() && this.beanFactory != null &&
 				AutoProxyUtils.shouldProxyTargetClass(this.beanFactory, beanName)) {

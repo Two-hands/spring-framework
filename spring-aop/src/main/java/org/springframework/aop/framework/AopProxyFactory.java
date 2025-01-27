@@ -40,6 +40,10 @@ package org.springframework.aop.framework;
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
+ *
+ * <br/>
+ * 模式：接口方法模式
+ * 创建AOP代理的工厂接口
  */
 public interface AopProxyFactory {
 

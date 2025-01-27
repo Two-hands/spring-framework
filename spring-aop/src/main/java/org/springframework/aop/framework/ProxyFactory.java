@@ -31,6 +31,10 @@ import org.springframework.util.ClassUtils;
  * @author Juergen Hoeller
  * @author Rob Harrop
  * @since 14.03.2003
+ *
+ *
+ * <br/>
+ * 面向编程的AOP代理工厂，提供了一种在自定义用户代码中获取和配置AOP代理实例的简单方法。（不是通过BeanFactory中的声明性设置）
  */
 @SuppressWarnings("serial")
 public class ProxyFactory extends ProxyCreatorSupport {
@@ -155,6 +159,9 @@ public class ProxyFactory extends ProxyCreatorSupport {
 	 * the target class of the {@code TargetSource}.
 	 * @param targetSource the TargetSource that the proxy should invoke
 	 * @return the proxy object
+	 *
+	 * <br/>
+	 * 直接使用CGLIB方式根据目标对象创建代理对象
 	 */
 	public static Object getProxy(TargetSource targetSource) {
 		if (targetSource.getTargetClass() == null) {

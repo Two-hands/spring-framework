@@ -16,15 +16,15 @@
 
 package org.springframework.aop.framework;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor;
 import org.springframework.core.SmartClassLoader;
 import org.springframework.lang.Nullable;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base class for {@link BeanPostProcessor} implementations that apply a
@@ -59,17 +59,27 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 	}
 
 
+	/**
+	 * 如果beanClass满足advisor增强条件，则创建beanClass的代理类返回
+	 * @param beanClass the raw class of the bean  目标对象
+	 * @param beanName the name of the bean Bean名称
+	 * @return 新的代理类Class对象或原有beanClass（目标对象）
+	 */
 	@Override
 	public Class<?> determineBeanType(Class<?> beanClass, String beanName) {
 		if (this.advisor != null && isEligible(beanClass)) {
+			//满足条件，使用advisor创建代理工厂
 			ProxyFactory proxyFactory = new ProxyFactory();
 			proxyFactory.copyFrom(this);
 			proxyFactory.setTargetClass(beanClass);
 
 			if (!proxyFactory.isProxyTargetClass()) {
+				//设置advised的interfaces或proxyTargetClass属性
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
+			//设置advised的advisors
 			proxyFactory.addAdvisor(this.advisor);
+			//自定义advised
 			customizeProxyFactory(proxyFactory);
 
 			// Use original ClassLoader if bean class not locally loaded in overriding class loader
@@ -78,20 +88,30 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 					classLoader != beanClass.getClassLoader()) {
 				classLoader = smartClassLoader.getOriginalClassLoader();
 			}
+			//获取代理类的Class对象
 			return proxyFactory.getProxyClass(classLoader);
 		}
 
 		return beanClass;
 	}
 
+	/**
+	 * bean实例化后，如果bean是Advised类型，尝试向bean（Advised#addAdvisor）添加这个advisor，
+	 * 如果需要代理bean，则创建代理对象并返回
+	 * @param bean the new bean instance   原目标对象
+	 * @param beanName the name of the bean  bean名称
+	 * @return  原目标对象或代理对象
+	 */
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) {
 		if (this.advisor == null || bean instanceof AopInfrastructureBean) {
 			// Ignore AOP infrastructure such as scoped proxies.
+			//不需要代理
 			return bean;
 		}
 
 		if (bean instanceof Advised advised) {
+			//bean本身是Advised类型，调用Advised#addAdvisor添加advisor
 			if (!advised.isFrozen() && isEligible(AopUtils.getTargetClass(bean))) {
 				// Add our local Advisor to the existing proxy's Advisor chain.
 				if (this.beforeExistingAdvisors) {
@@ -110,6 +130,7 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 			}
 		}
 
+		//代理非Advised类型的bean（通过advisor增强功能）
 		if (isEligible(bean, beanName)) {
 			ProxyFactory proxyFactory = prepareProxyFactory(bean, beanName);
 			if (!proxyFactory.isProxyTargetClass()) {
@@ -165,6 +186,7 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 		if (this.advisor == null) {
 			return false;
 		}
+		//检测targetClass是否满足advisor增强条件？如果满足 - 将advice应用到targetClass
 		eligible = AopUtils.canApply(this.advisor, targetClass);
 		this.eligibleBeans.put(targetClass, eligible);
 		return eligible;

@@ -16,8 +16,6 @@
 
 package org.springframework.aop.framework;
 
-import java.io.Closeable;
-
 import org.springframework.beans.factory.Aware;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.DisposableBean;
@@ -26,6 +24,8 @@ import org.springframework.core.Ordered;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+
+import java.io.Closeable;
 
 /**
  * Base class with common functionality for proxy processors, in particular
@@ -100,8 +100,14 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 	 * to filter for reasonable proxy interfaces, falling back to a target-class proxy otherwise.
 	 * @param beanClass the class of the bean
 	 * @param proxyFactory the ProxyFactory for the bean
+	 *
+ 	 *  <br/>
+	 *  判断代理素材：
+	 *   1、如果beanClass存在接口，获取所有满足条件的接口，添加到proxyFactory#addInterface
+	 *   2、如果beanClass存在接口且所有接口不满足条件，或不存在接口则设置proxyFactory#setProxyTargetClass（直接代理目标对象）
 	 */
 	protected void evaluateProxyInterfaces(Class<?> beanClass, ProxyFactory proxyFactory) {
+		//获取beanClass的所有接口
 		Class<?>[] targetInterfaces = ClassUtils.getAllInterfacesForClass(beanClass, getProxyClassLoader());
 		boolean hasReasonableProxyInterface = false;
 		for (Class<?> ifc : targetInterfaces) {

@@ -16,18 +16,10 @@
 
 package org.springframework.aop.framework;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import org.aopalliance.aop.Advice;
 import org.aopalliance.intercept.Interceptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.TargetSource;
 import org.springframework.aop.framework.adapter.AdvisorAdapterRegistry;
@@ -35,18 +27,19 @@ import org.springframework.aop.framework.adapter.GlobalAdvisorAdapterRegistry;
 import org.springframework.aop.framework.adapter.UnknownAdviceTypeException;
 import org.springframework.aop.target.SingletonTargetSource;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.BeanFactoryUtils;
-import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.FactoryBeanNotInitializedException;
-import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.*;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * {@link org.springframework.beans.factory.FactoryBean} implementation that builds an
@@ -88,6 +81,11 @@ import org.springframework.util.ObjectUtils;
  * @see org.aopalliance.intercept.MethodInterceptor
  * @see org.springframework.aop.Advisor
  * @see Advised
+ *
+ *
+ * <br/>
+ * <p>
+ *  通过BeanFactory获取Advisors和
  */
 @SuppressWarnings("serial")
 public class ProxyFactoryBean extends ProxyCreatorSupport
@@ -101,16 +99,30 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	/*
+	BeanFactory中beanName为interceptorNames集合的Interceptors
+	如果targetName和targetSource都未指定，数组interceptorNames最后一个元素名称必须是指代目标对象
+	 */
 	@Nullable
 	private String[] interceptorNames;
 
+	/*
+	BeanFactory中beanName为targetName值的目标对象（被代理对象）
+	 */
 	@Nullable
 	private String targetName;
 
 	private boolean autodetectInterfaces = true;
 
+
+	/*
+	代理对象是否单例？ true - 保持唯一
+	 */
 	private boolean singleton = true;
 
+	/*
+	Advisor（含Advice）转换为指定MethodInterceptor的适配中心
+	 */
 	private AdvisorAdapterRegistry advisorAdapterRegistry = GlobalAdvisorAdapterRegistry.getInstance();
 
 	private boolean freezeProxy = false;
@@ -126,7 +138,12 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 	/** Whether the advisor chain has already been initialized. */
 	private boolean advisorChainInitialized = false;
 
-	/** If this is a singleton, the cached singleton proxy instance. */
+	/**
+	 * If this is a singleton, the cached singleton proxy instance.
+	 *
+	 * <br/>
+	 * 如果singleton=true，代理对象需要缓存到这里
+	 */
 	@Nullable
 	private Object singletonInstance;
 
@@ -248,8 +265,10 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 	@Override
 	@Nullable
 	public Object getObject() throws BeansException {
+		//初始Advised中的advisors属性：从BeanFactory中获取实例
 		initializeAdvisorChain();
 		if (isSingleton()) {
+			//获取代理对象
 			return getSingletonInstance();
 		}
 		else {
@@ -306,6 +325,7 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 	 */
 	private synchronized Object getSingletonInstance() {
 		if (this.singletonInstance == null) {
+			//targetName不为空，将其作为beanName从BeanFactory中获取目标对象，并转换为TargetSource
 			this.targetSource = freshTargetSource();
 			if (this.autodetectInterfaces && getProxiedInterfaces().length == 0 && !isProxyTargetClass()) {
 				// Rely on AOP infrastructure to tell us what interfaces to proxy.
@@ -411,6 +431,8 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 	 * from a BeanFactory will be refreshed each time a new prototype instance
 	 * is added. Interceptors added programmatically through the factory API
 	 * are unaffected by such changes.
+	 *
+	 * 从BeanFactory中获取匹配的所有Advisor或Advice实例，并将其添加到AdvisedSupport.advisors
 	 */
 	private synchronized void initializeAdvisorChain() throws AopConfigException, BeansException {
 		if (!this.advisorChainInitialized && !ObjectUtils.isEmpty(this.interceptorNames)) {
@@ -426,8 +448,10 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 			}
 
 			// Materialize interceptor chain from bean names.
+			//遍历interceptorNames，模糊或精确获取所有匹配的Advisor或Advice，并将其添加到AdvisedSupport.advisors
 			for (String name : this.interceptorNames) {
 				if (name.endsWith(GLOBAL_SUFFIX)) {
+					//代理拦截器模糊匹配
 					if (!(this.beanFactory instanceof ListableBeanFactory lbf)) {
 						throw new AopConfigException(
 								"Can only use global advisors or interceptors with a ListableBeanFactory");
@@ -436,6 +460,7 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 				}
 
 				else {
+					//代理拦截器精确匹配
 					// If we get here, we need to add a named interceptor.
 					// We must check if it's a singleton or prototype.
 					Object advice;
@@ -489,6 +514,10 @@ public class ProxyFactoryBean extends ProxyCreatorSupport
 
 	/**
 	 * Add all global interceptors and pointcuts.
+	 *
+	 * <br/>
+	 * 根据特定限定词从BeanFactory中获取匹配的所有Advisor、Interceptor实例
+	 * 并将其转换为Advisor（尤指Interceptor）后添加到AdvisedSupport.advisors
 	 */
 	private void addGlobalAdvisors(ListableBeanFactory beanFactory, String prefix) {
 		String[] globalAdvisorNames =

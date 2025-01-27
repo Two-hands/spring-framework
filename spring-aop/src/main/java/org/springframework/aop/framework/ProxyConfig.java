@@ -16,9 +16,9 @@
 
 package org.springframework.aop.framework;
 
-import java.io.Serializable;
-
 import org.springframework.util.Assert;
+
+import java.io.Serializable;
 
 /**
  * Convenience superclass for configuration used in creating proxies,
@@ -27,6 +27,9 @@ import org.springframework.util.Assert;
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see AdvisedSupport
+ *
+ * <br/>
+ * 代理配置操作：定义了一些代理工厂配置的可配置属性
  */
 public class ProxyConfig implements Serializable {
 
@@ -34,14 +37,29 @@ public class ProxyConfig implements Serializable {
 	private static final long serialVersionUID = -8409359707199703185L;
 
 
+	/*
+	直接代理目标对象？ - true：表示会以CGLIB进行目标代理
+	 */
 	private boolean proxyTargetClass = false;
 
+	/*
+	优化？？？
+	 */
 	private boolean optimize = false;
 
+	/*
+	代理对象可以转换为Advised类型？ true：代理对象可以转换为Advised类型
+	 */
 	boolean opaque = false;
 
+	/*
+	向外暴露代理对象？ true：可以向外暴露代理对象
+	 */
 	boolean exposeProxy = false;
 
+	/*
+	冻结配置？ true：无法再添加、移除Advisor
+	 */
 	private boolean frozen = false;
 
 

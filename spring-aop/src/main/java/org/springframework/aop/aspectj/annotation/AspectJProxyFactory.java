@@ -16,12 +16,7 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.aspectj.lang.reflect.PerClauseKind;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.aspectj.AspectJProxyUtils;
 import org.springframework.aop.aspectj.SimpleAspectInstanceFactory;
@@ -30,6 +25,10 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * AspectJ-based proxy factory, allowing for programmatic building
@@ -45,6 +44,14 @@ import org.springframework.util.ClassUtils;
  * @see #getProxy()
  * @see #getProxy(ClassLoader)
  * @see org.springframework.aop.framework.ProxyFactory
+ *
+ *
+ * <br/>
+ * 创建基于AspectJ风格的AOP代理对象
+ * ProxyFactoryBean、AspectJProxyFactory与ProxyFactory区别
+ *     ProxyFactory：虽然可以与AspectJ一起使用，但需要手动将AspectJ的切面定义转译为Advisor或Advice定义；【功能直接、简洁，需要手动配置Advisor】
+ *     AspectJProxyFactory：直接支持AspectJ风格的切面定义（支持将Aspect实例转换为Advisor）；【支持Aspect切面功能】
+ *     ProxyFactoryBean：需要的Advisor、Advice实例从BeanFactory中获取；【支持通过BeanFactory灵活配置Advicor】
  */
 @SuppressWarnings("serial")
 public class AspectJProxyFactory extends ProxyCreatorSupport {

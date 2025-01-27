@@ -28,6 +28,10 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @since 2.0.3
  * @see org.springframework.aop.support.AopUtils#getTargetClass(Object)
+ *
+ *
+ * <br/>
+ * 提供获取目标对象（被代理对象）的类型的能力
  */
 public interface TargetClassAware {
 

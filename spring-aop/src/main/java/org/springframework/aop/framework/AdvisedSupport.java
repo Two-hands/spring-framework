@@ -16,26 +16,8 @@
 
 package org.springframework.aop.framework;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.aopalliance.aop.Advice;
-
-import org.springframework.aop.Advisor;
-import org.springframework.aop.DynamicIntroductionAdvice;
-import org.springframework.aop.IntroductionAdvisor;
-import org.springframework.aop.IntroductionInfo;
-import org.springframework.aop.Pointcut;
-import org.springframework.aop.PointcutAdvisor;
-import org.springframework.aop.TargetSource;
+import org.springframework.aop.*;
 import org.springframework.aop.support.DefaultIntroductionAdvisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.target.EmptyTargetSource;
@@ -45,6 +27,12 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ObjectUtils;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base class for AOP proxy configuration managers.
@@ -64,6 +52,11 @@ import org.springframework.util.ObjectUtils;
  * @author Juergen Hoeller
  * @author Sam Brannen
  * @see org.springframework.aop.framework.AopProxy
+ *
+ *
+ * <br/>
+ * Advised接口基本功能实现类：
+ *    - 增加或或移除
  */
 public class AdvisedSupport extends ProxyConfig implements Advised {
 
@@ -84,21 +77,37 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	/** Whether the Advisors are already filtered for the specific target class. */
 	private boolean preFiltered = false;
 
-	/** The AdvisorChainFactory to use. */
+	/**
+	 * The AdvisorChainFactory to use.
+	 *
+	 * <br/>
+	 * 根据Advisors生成拦截（interceptors）链
+	 */
 	private AdvisorChainFactory advisorChainFactory;
 
-	/** Cache with Method as key and advisor chain List as value. */
+	/**
+	 * Cache with Method as key and advisor chain List as value.
+	 *
+	 * <br/>
+	 * 缓存：当Advisor、Advice、proxied interfaces发生新增、移除、替换时会清除缓存
+	 */
 	private transient Map<MethodCacheKey, List<Object>> methodCache;
 
 	/**
 	 * Interfaces to be implemented by the proxy. Held in List to keep the order
 	 * of registration, to create JDK proxy with specified order of interfaces.
+	 *
+	 * <br/>
+	 * JDK方式代理需要的接口（严格按照注册时的顺序）
 	 */
 	private List<Class<?>> interfaces = new ArrayList<>();
 
 	/**
 	 * List of Advisors. If an Advice is added, it will be wrapped
 	 * in an Advisor before being added to this List.
+	 *
+	 * <br/>
+	 * 代理增强的功能从这里衍生
 	 */
 	private List<Advisor> advisors = new ArrayList<>();
 
@@ -485,6 +494,9 @@ public class AdvisedSupport extends ProxyConfig implements Advised {
 	 * @param method the proxied method
 	 * @param targetClass the target class
 	 * @return a List of MethodInterceptors (may also include InterceptorAndDynamicMethodMatchers)
+	 *
+	 * <br/>
+	 * 从Advisors获取满足条件的Advice，将其直接或间接（适配）转换为Interceptors
 	 */
 	public List<Object> getInterceptorsAndDynamicInterceptionAdvice(Method method, @Nullable Class<?> targetClass) {
 		MethodCacheKey cacheKey = new MethodCacheKey(method);

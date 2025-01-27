@@ -16,10 +16,10 @@
 
 package org.springframework.aop.framework;
 
+import org.springframework.util.Assert;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import org.springframework.util.Assert;
 
 /**
  * Base class for proxy factories.
@@ -28,6 +28,14 @@ import org.springframework.util.Assert;
  * @author Juergen Hoeller
  * @since 2.0.3
  * @see #createAopProxy()
+ *
+ *
+ * <br/>
+ * 代理工厂的基类：
+ *    持有AopProxyFactory用于创建AopPorxy实例（自身作为AopProxyFactory创建代理对象的入参[AdvisedSupport - Advised配置]）
+ *    并且提供一个机会在第一个AopProxy实例创建前修改Advised配置（模式：观察者模式）
+ *
+ *    AopProxyFactory通常是DefaultAopProxyFactory类型，提供JDK和CGLIB方式创建代理对象
  */
 @SuppressWarnings("serial")
 public class ProxyCreatorSupport extends AdvisedSupport {

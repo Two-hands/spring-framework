@@ -16,12 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.beans.factory.parsing.Location;
 import org.springframework.beans.factory.parsing.Problem;
 import org.springframework.beans.factory.parsing.ProblemReporter;
@@ -34,6 +28,8 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+
+import java.util.*;
 
 /**
  * Represents a user-defined {@link Configuration @Configuration} class.
@@ -53,16 +49,31 @@ final class ConfigurationClass {
 
 	private final Resource resource;
 
+	/*
+	bean的名称
+	 */
 	@Nullable
 	private String beanName;
 
+	/*
+	记录该ConfigurationClass被哪些其他配置类导入（引用），因为一个类可能被多个配置内导入
+	 */
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
+	/*
+	被@Bean注解标注的方法对应的BeanMethod（含MethodMetadata和其对应的配置类）
+	 */
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
+	/*
+	key：需要导入其他BeanDefinition的配置文件，value：解析该文件中BeanDefinition的BeanDefinitionReader
+	 */
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
+	/*
+	key：存放ImportBeanDefinitionRegistrar实例，value：存放使用@Import直接或间接导入该实例的类的AnnotationMetadata实例
+	 */
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 
@@ -211,6 +222,7 @@ final class ConfigurationClass {
 		Map<String, Object> attributes = this.metadata.getAnnotationAttributes(Configuration.class.getName());
 
 		// A configuration class may not be final (CGLIB limitation) unless it declares proxyBeanMethods=false
+		//当proxyBeanMethods=false时配置类如果有final修饰，无法代理
 		if (attributes != null && (Boolean) attributes.get("proxyBeanMethods")) {
 			if (this.metadata.isFinal()) {
 				problemReporter.error(new FinalConfigurationProblem());
@@ -221,6 +233,7 @@ final class ConfigurationClass {
 		}
 
 		// A configuration class may not contain overloaded bean methods unless it declares enforceUniqueMethods=false
+		//配置类默认不能包含重载bean方法,除非它声明enforceUniqueMethods=false
 		if (attributes != null && (Boolean) attributes.get("enforceUniqueMethods")) {
 			Map<String, MethodMetadata> beanMethodsByName = new LinkedHashMap<>();
 			for (BeanMethod beanMethod : this.beanMethods) {

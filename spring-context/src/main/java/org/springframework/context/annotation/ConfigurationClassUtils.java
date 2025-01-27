@@ -16,13 +16,8 @@
 
 package org.springframework.context.annotation;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.aop.framework.AopInfrastructureBean;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -40,6 +35,10 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Utilities for identifying and configuring {@link Configuration} classes.
@@ -111,6 +110,7 @@ public abstract class ConfigurationClassUtils {
 			return false;
 		}
 
+		//获取类的AnnotationMetadata
 		AnnotationMetadata metadata;
 		if (beanDef instanceof AnnotatedBeanDefinition annotatedBd &&
 				className.equals(annotatedBd.getMetadata().getClassName())) {
@@ -143,10 +143,15 @@ public abstract class ConfigurationClassUtils {
 			}
 		}
 
+		//解析类上的@Configuration注解
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
+			//配置类采用full模式：@Configuration#proxyBeanMethods=true
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
+		//配置类采用lite模式：1、有@Configuration注解且proxyBeanMethods=false；
+		//2、非接口，类含有@Component、@ComponentScan、@Import、@ImportResource注解；或方法含有@Bean注解
+		//3、通过AnnotatedBeanDefinitionReader#registerBean方法添加的BeanDefinition
 		else if (config != null || Boolean.TRUE.equals(beanDef.getAttribute(CANDIDATE_ATTRIBUTE)) ||
 				isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);
@@ -161,6 +166,7 @@ public abstract class ConfigurationClassUtils {
 			beanDef.setAttribute(ORDER_ATTRIBUTE, order);
 		}
 
+		//full、lite模式的配置类
 		return true;
 	}
 

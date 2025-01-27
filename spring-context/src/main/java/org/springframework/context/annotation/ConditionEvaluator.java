@@ -90,8 +90,8 @@ class ConditionEvaluator {
 	 */
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
 
-		//类没有注解 或 没有含@Conditional注解，则不处理（默认视为满足条件）
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
+			//没有注解元数据或没有含含@Conditional注解，不做处理，直接视为满足条件
 			return false;
 		}
 

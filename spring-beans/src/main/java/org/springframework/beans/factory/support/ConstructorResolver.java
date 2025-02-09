@@ -389,7 +389,8 @@ class ConstructorResolver {
 		ArgumentsHolder argsHolderToUse = null;
 		Object[] argsToUse = null;
 
-		//解析出argsToUse（实例化所需的参数）、factoryMethodToUse
+		//factoryMethodToUse：创建bean的方法
+		//argsToUse：创建bean的方法所需的参数
 		if (explicitArgs != null) {
 			argsToUse = explicitArgs;
 		}

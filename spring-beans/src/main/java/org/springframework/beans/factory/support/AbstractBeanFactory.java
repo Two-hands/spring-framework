@@ -199,7 +199,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 			String name, @Nullable Class<T> requiredType, @Nullable Object[] args, boolean typeCheckOnly)
 			throws BeansException {
 
-		//若name前缀含&，去掉所有前缀中的&
+		//beanName将不含&前缀
 		String beanName = transformedBeanName(name);
 		Object beanInstance;
 
@@ -264,11 +264,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					beanCreation.tag("beanType", requiredType::toString);
 				}
 				//*** 开始创建bean单例：***
-				//根据beanName获取要创建bean的RootBeanDefinition（可能会从BeanDefinition进行合并生成）
+				//获取或创建【根据BeanDefinition生成】mergedBeanDefinition
 				RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
 				checkMergedBeanDefinition(mbd, beanName, args);
 
 				// Guarantee initialization of beans that the current bean depends on.
+				//在创建bean实例前先创建其依赖的所有beans
 				String[] dependsOn = mbd.getDependsOn();
 				if (dependsOn != null) {
 					for (String dep : dependsOn) {
@@ -276,8 +277,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 							throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 									"Circular depends-on relationship between '" + beanName + "' and '" + dep + "'");
 						}
+						//注册依赖关系（依赖与被依赖关系）
 						registerDependentBean(dep, beanName);
 						try {
+							//提前实例化被依赖的bean
 							getBean(dep);
 						}
 						catch (NoSuchBeanDefinitionException ex) {
@@ -289,10 +292,12 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 				// Create bean instance.
 				if (mbd.isSingleton()) {
-					//创建bean单例，并将创建后的bean单例加入到singletonObjects集合中
+					//单例bean创建：
+					//    若singletonObjects集合已经包含该bean，直接返回
+					//    若singletonObjects集合不包含，执行createBean方法创建bean（调用这个方法前记录这个bean为创建中，调用后移除这个状态）
 					sharedInstance = getSingleton(beanName, () -> {
 						try {
-							//getSingleton方法调用createBean方法创建bean单例
+							//获取缓存失败，真正创建该bean实例
 							return createBean(beanName, mbd, args);
 						}
 						catch (BeansException ex) {
@@ -308,6 +313,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 
 				else if (mbd.isPrototype()) {
 					// It's a prototype -> create a new instance.
+					//非单例bean创建
 					Object prototypeInstance = null;
 					try {
 						beforePrototypeCreation(beanName);

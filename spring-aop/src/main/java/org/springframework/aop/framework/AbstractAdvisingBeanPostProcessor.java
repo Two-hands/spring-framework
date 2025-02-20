@@ -32,6 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Juergen Hoeller
  * @since 3.2
+ *
+ * <br/>
+ * 主要把某个Advisor应用到特定(某些)的beans【生成代理对象，仅含一个Advisor】
+ * Advisor从哪里来，如何创建由子类决定
  */
 @SuppressWarnings("serial")
 public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSupport

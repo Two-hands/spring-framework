@@ -16,15 +16,14 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.lang.reflect.Method;
-import java.util.List;
-
 import org.aopalliance.aop.Advice;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.aspectj.AspectJExpressionPointcut;
 import org.springframework.aop.framework.AopConfigException;
 import org.springframework.lang.Nullable;
+
+import java.lang.reflect.Method;
+import java.util.List;
 
 /**
  * Interface for factories that can create Spring AOP Advisors from classes
@@ -35,6 +34,14 @@ import org.springframework.lang.Nullable;
  * @since 2.0
  * @see AspectMetadata
  * @see org.aspectj.lang.reflect.AjTypeSystem
+ *
+ *
+ * <br/>
+ * 通过解析切面对象（被@Aspect注解）获取Advisor、Advice
+ *
+ * AspectJ：是一个具体的AOP框架，提供了完整的AOP实现；它扩展了Java语言，定义了AOP语法。
+ * Aspect（切面）：是AOP中的一个模块化单元，用于封装横切关注点，可以包含通知（Advice）、切
+ *               点（Pointcut）、引入（Introduction）等元素，用于定义在特定连接点（Join Point）上执行的行为‌
  */
 public interface AspectJAdvisorFactory {
 
@@ -64,21 +71,27 @@ public interface AspectJAdvisorFactory {
 	/**
 	 * Build Spring AOP Advisors for all annotated At-AspectJ methods
 	 * on the specified aspect instance.
-	 * @param aspectInstanceFactory the aspect instance factory
+	 * @param aspectInstanceFactory the aspect instance factory   切面工厂：创建、返回切面对象、切面类元数据对象
 	 * (not the aspect instance itself in order to avoid eager instantiation)
 	 * @return a list of advisors for this class
+	 *
+	 * <br/>
+	 * 通过解析切面，获取所有Advisors
 	 */
 	List<Advisor> getAdvisors(MetadataAwareAspectInstanceFactory aspectInstanceFactory);
 
 	/**
 	 * Build a Spring AOP Advisor for the given AspectJ advice method.
-	 * @param candidateAdviceMethod the candidate advice method
-	 * @param aspectInstanceFactory the aspect instance factory
+	 * @param candidateAdviceMethod the candidate advice method   需要被转换为Advice的方法
+	 * @param aspectInstanceFactory the aspect instance factory   切面工厂
 	 * @param declarationOrder the declaration order within the aspect
 	 * @param aspectName the name of the aspect
 	 * @return {@code null} if the method is not an AspectJ advice method
 	 * or if it is a pointcut that will be used by other advice but will not
 	 * create a Spring advice in its own right
+	 *
+	 * <br/>
+	 * 通过把特定方法转换为Advisor
 	 */
 	@Nullable
 	Advisor getAdvisor(Method candidateAdviceMethod, MetadataAwareAspectInstanceFactory aspectInstanceFactory,
@@ -86,9 +99,9 @@ public interface AspectJAdvisorFactory {
 
 	/**
 	 * Build a Spring AOP Advice for the given AspectJ advice method.
-	 * @param candidateAdviceMethod the candidate advice method
-	 * @param expressionPointcut the AspectJ expression pointcut
-	 * @param aspectInstanceFactory the aspect instance factory
+	 * @param candidateAdviceMethod the candidate advice method  作为构建advice的方法
+	 * @param expressionPointcut the AspectJ expression pointcut AspectJ的切入点表达式
+	 * @param aspectInstanceFactory the aspect instance factory  切面工厂
 	 * @param declarationOrder the declaration order within the aspect
 	 * @param aspectName the name of the aspect
 	 * @return {@code null} if the method is not an AspectJ advice method
@@ -99,6 +112,9 @@ public interface AspectJAdvisorFactory {
 	 * @see org.springframework.aop.aspectj.AspectJAfterAdvice
 	 * @see org.springframework.aop.aspectj.AspectJAfterReturningAdvice
 	 * @see org.springframework.aop.aspectj.AspectJAfterThrowingAdvice
+	 *
+	 * <br/>
+	 * 通过切面的某个方法构建Advice
 	 */
 	@Nullable
 	Advice getAdvice(Method candidateAdviceMethod, AspectJExpressionPointcut expressionPointcut,

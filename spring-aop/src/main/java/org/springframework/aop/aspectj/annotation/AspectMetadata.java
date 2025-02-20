@@ -16,20 +16,19 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.AjType;
 import org.aspectj.lang.reflect.AjTypeSystem;
 import org.aspectj.lang.reflect.PerClauseKind;
-
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.aspectj.AspectJExpressionPointcut;
 import org.springframework.aop.aspectj.TypePatternClassFilter;
 import org.springframework.aop.framework.AopConfigException;
 import org.springframework.aop.support.ComposablePointcut;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 
 /**
  * Metadata for an AspectJ aspect class, with an additional Spring AOP pointcut
@@ -42,6 +41,9 @@ import org.springframework.aop.support.ComposablePointcut;
  * @author Juergen Hoeller
  * @since 2.0
  * @see org.springframework.aop.aspectj.AspectJExpressionPointcut
+ *
+ * <br/>
+ * 切面的元数据，包含切面类名称、切面类类型(Class对象)、切点（PointCut）
  */
 @SuppressWarnings("serial")
 public class AspectMetadata implements Serializable {
@@ -50,12 +52,18 @@ public class AspectMetadata implements Serializable {
 	 * The name of this aspect as defined to Spring (the bean name) -
 	 * allows us to determine if two pieces of advice come from the
 	 * same aspect and hence their relative precedence.
+	 *
+	 * <br/>
+	 * 切面类的名称
 	 */
 	private final String aspectName;
 
 	/**
 	 * The aspect class, stored separately for re-resolution of the
 	 * corresponding AjType on deserialization.
+	 *
+	 * <br/>
+	 * 切面类
 	 */
 	private final Class<?> aspectClass;
 
@@ -69,6 +77,9 @@ public class AspectMetadata implements Serializable {
 	 * Spring AOP pointcut corresponding to the per clause of the
 	 * aspect. Will be the {@code Pointcut.TRUE} canonical instance in the
 	 * case of a singleton, otherwise an AspectJExpressionPointcut.
+	 *
+	 * <br/>
+	 * 切点（Pointcut）是一组连接点，它定义了在哪些连接点（JoinPoint）上执行通知（Advice）
 	 */
 	private final Pointcut perClausePointcut;
 
@@ -83,6 +94,7 @@ public class AspectMetadata implements Serializable {
 
 		Class<?> currClass = aspectClass;
 		AjType<?> ajType = null;
+		//通过提供的Class对象解析出AjType（可能是某个父类...）
 		while (currClass != Object.class) {
 			AjType<?> ajTypeToCheck = AjTypeSystem.getAjType(currClass);
 			if (ajTypeToCheck.isAspect()) {
@@ -122,6 +134,9 @@ public class AspectMetadata implements Serializable {
 
 	/**
 	 * Extract contents from String of form {@code pertarget(contents)}.
+	 *
+	 * <br/>
+	 * 解析切面类的@Aspect注解，获取切面表达式
 	 */
 	private String findPerClause(Class<?> aspectClass) {
 		Aspect ann = aspectClass.getAnnotation(Aspect.class);

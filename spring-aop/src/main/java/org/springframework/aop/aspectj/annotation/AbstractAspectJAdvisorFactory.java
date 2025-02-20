@@ -16,29 +16,22 @@
 
 package org.springframework.aop.aspectj.annotation;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.reflect.AjType;
+import org.aspectj.lang.reflect.AjTypeSystem;
+import org.aspectj.lang.reflect.PerClauseKind;
+import org.springframework.aop.framework.AopConfigException;
+import org.springframework.core.ParameterNameDiscoverer;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.lang.Nullable;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.StringTokenizer;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.aspectj.lang.annotation.After;
-import org.aspectj.lang.annotation.AfterReturning;
-import org.aspectj.lang.annotation.AfterThrowing;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.aspectj.lang.annotation.Pointcut;
-import org.aspectj.lang.reflect.AjType;
-import org.aspectj.lang.reflect.AjTypeSystem;
-import org.aspectj.lang.reflect.PerClauseKind;
-
-import org.springframework.aop.framework.AopConfigException;
-import org.springframework.core.ParameterNameDiscoverer;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.lang.Nullable;
 
 /**
  * Abstract base class for factories that can create Spring AOP Advisors
@@ -52,9 +45,19 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @author Sam Brannen
  * @since 2.0
+ *
+ * <br/>
+ * 定义切面类（或其父类）必须有@Aspect注解，同时定义了获取和解析方法上的AspectJ注解属性的基础功能
  */
 public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFactory {
 
+	/*
+	注解的正常执行顺序：
+      @Around -> @Before -> method -> @Around -> @After -> @AfterReturning
+
+    注解的正常执行顺序：
+      @Around -> @Before -> method -> @Around -> @After -> @AfterThrowing
+	 */
 	private static final Class<?>[] ASPECTJ_ANNOTATION_CLASSES = new Class<?>[] {
 			Pointcut.class, Around.class, Before.class, After.class, AfterReturning.class, AfterThrowing.class};
 
@@ -62,6 +65,10 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	/** Logger available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	/*
+	AspectJ注解（按解析顺序排列）：@Pointcut、@Around、@Before、@After、@AfterReturning、@AfterThrowing
+	获取AspectJ注解的argNames属性值作为匹配方法的参数名
+	 */
 	protected final ParameterNameDiscoverer parameterNameDiscoverer = new AspectJAnnotationParameterNameDiscoverer();
 
 
@@ -90,6 +97,9 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	/**
 	 * Find and return the first AspectJ annotation on the given method
 	 * (there <i>should</i> only be one anyway...).
+	 *
+	 * <br/>
+	 * 从方法上按顺序获取一个AspectJ注解，将其封装为AspectJAnnotation（包含：原注解、定义的切入点表达式、指定的方法参数名称）
 	 */
 	@SuppressWarnings("unchecked")
 	@Nullable
@@ -128,6 +138,9 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	/**
 	 * Class modeling an AspectJ annotation, exposing its type enumeration and
 	 * pointcut String.
+	 *
+	 * <br/>
+	 * 存储AspectJ注解的解析结果，含：原注解对象，AspectJ注解类型，切入点表达式、方法参数名称定义
 	 */
 	protected static class AspectJAnnotation {
 
@@ -207,6 +220,9 @@ public abstract class AbstractAspectJAdvisorFactory implements AspectJAdvisorFac
 	/**
 	 * ParameterNameDiscoverer implementation that analyzes the arg names
 	 * specified at the AspectJ annotation level.
+	 *
+	 * <br/>
+	 * 获取方法上AspectJ注解的argNames属性值作为匹配方法的参数名
 	 */
 	private static class AspectJAnnotationParameterNameDiscoverer implements ParameterNameDiscoverer {
 

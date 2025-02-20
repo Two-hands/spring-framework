@@ -16,19 +16,18 @@
 
 package org.springframework.aop.framework;
 
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.aop.ProxyMethodInvocation;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.core.BridgeMethodResolver;
+import org.springframework.lang.Nullable;
+
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.aopalliance.intercept.MethodInterceptor;
-import org.aopalliance.intercept.MethodInvocation;
-
-import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.aop.support.AopUtils;
-import org.springframework.core.BridgeMethodResolver;
-import org.springframework.lang.Nullable;
 
 /**
  * Spring's implementation of the AOP Alliance
@@ -61,15 +60,20 @@ import org.springframework.lang.Nullable;
  */
 public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Cloneable {
 
+	//代理对象
 	protected final Object proxy;
 
+	//目标对象
 	@Nullable
 	protected final Object target;
 
+	//目标对象方法
 	protected final Method method;
 
+	//目标对象方法参数
 	protected Object[] arguments;
 
+	//目标对象class类型
 	@Nullable
 	private final Class<?> targetClass;
 
@@ -82,6 +86,9 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	/**
 	 * List of MethodInterceptor and InterceptorAndDynamicMethodMatcher
 	 * that need dynamic checks.
+	 *
+	 * <br/>
+	 * 由Advice转换的Interceptor集合
 	 */
 	protected final List<?> interceptorsAndDynamicMethodMatchers;
 
@@ -169,6 +176,8 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 			// Evaluate dynamic method matcher here: static part will already have
 			// been evaluated and found to match.
 			Class<?> targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
+			//这里如果MethodMatcher是AspectJExpressionPointcut类型，在matches方法匹配时会
+			// 构建JoinPointMatch（含参数值arguments）并放入MethodInvocation#setUserAttribute，key为pointcut表达式
 			if (dm.matcher().matches(this.method, targetClass, this.arguments)) {
 				return dm.interceptor().invoke(this);
 			}

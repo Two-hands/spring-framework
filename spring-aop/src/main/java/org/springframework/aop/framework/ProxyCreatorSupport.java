@@ -31,6 +31,7 @@ import java.util.List;
  *
  *
  * <br/>
+ * 持有代理工厂类，用于创建AopProxy代理对象，进而获取Proxy对象
  * 代理工厂的基类：
  *    持有AopProxyFactory用于创建AopPorxy实例（自身作为AopProxyFactory创建代理对象的入参[AdvisedSupport - Advised配置]）
  *    并且提供一个机会在第一个AopProxy实例创建前修改Advised配置（模式：观察者模式）

@@ -35,6 +35,9 @@ import org.springframework.lang.Nullable;
  * @since 4.2.3
  * @see AutoProxyUtils#shouldProxyTargetClass
  * @see AutoProxyUtils#determineTargetClass
+ *
+ * <br/>
+ * 提供BeanFactory成员变量，用于子类扩展根据从BeanFactory中直接或间接获取Advisor，或者创建的Advisor与BeanFactory有关联
  */
 @SuppressWarnings("serial")
 public abstract class AbstractBeanFactoryAwareAdvisingPostProcessor extends AbstractAdvisingBeanPostProcessor

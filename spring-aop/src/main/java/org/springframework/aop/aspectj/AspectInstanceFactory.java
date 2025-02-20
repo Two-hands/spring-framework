@@ -30,6 +30,9 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @since 2.0
  * @see org.springframework.beans.factory.BeanFactory#getBean
+ *
+ * <br/>
+ * 用于创建、返回切面（Aspect）实例
  */
 public interface AspectInstanceFactory extends Ordered {
 

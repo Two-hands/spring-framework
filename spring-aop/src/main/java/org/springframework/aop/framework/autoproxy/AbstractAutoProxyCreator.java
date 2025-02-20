@@ -87,6 +87,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see #getAdvicesAndAdvisorsForBean
  * @see BeanNameAutoProxyCreator
  * @see DefaultAdvisorAutoProxyCreator
+ *
+ *
+ * <br>
+ * 该类为自动代理对象创建器的基类：
+ *    在bean创建过程中的各个回调接口阶段（BeanPostProcessor）尝试对【需要代理】的bean创建代理对象
+ *    创建代理对象需要Advisor
+ *    从哪里获取以及过滤出适合bean的Advisor由其子类负责实现getAdvicesAndAdvisorsForBean方法
  */
 @SuppressWarnings("serial")
 public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
@@ -240,6 +247,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			else {
 				targetSource = EmptyTargetSource.forClass(beanClass);
 			}
+			//获取能够应用到bean的Advisor
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
 			if (specificInterceptors != DO_NOT_PROXY) {
 				this.advisedBeans.put(cacheKey, Boolean.TRUE);
@@ -292,6 +300,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			if (StringUtils.hasLength(beanName)) {
 				this.targetSourcedBeans.add(beanName);
 			}
+			//获取能够应用到bean的Advisor
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
 			Object proxy = createProxy(beanClass, beanName, specificInterceptors, targetSource);
 			this.proxyTypes.put(cacheKey, proxy.getClass());
@@ -358,15 +367,21 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
 			return bean;
 		}
+
+		//isInfrastructureClass方法：
+		//    1、如果bean.getClass()实现了Advice、Pointcut、Advisor、AopInfrastructureBean接口，不进行代理
+		//    2、如果bean.getClass()是切面类（含@Aspect注解），不进行代理
 		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
 		}
 
 		// Create proxy if we have advice.
+		//获取能够应用到bean的Advisor
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
+			//为bean创建代理对象，使用Advisors进行功能增强
 			Object proxy = createProxy(
 					bean.getClass(), beanName, specificInterceptors, new SingletonTargetSource(bean));
 			this.proxyTypes.put(cacheKey, proxy.getClass());
@@ -471,6 +486,15 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		return (Class<?>) buildProxy(beanClass, beanName, specificInterceptors, targetSource, true);
 	}
 
+	/**
+	 * 构建代理对象，返回代理对象或代理对象的Class对象
+	 * @param beanClass  目标对象的类型
+	 * @param beanName   目标对象的名称
+	 * @param specificInterceptors 代理过程中需要增强的功能
+	 * @param targetSource 目标对象
+	 * @param classOnly  是否返回代理对象 true-返回代理对象 false-返回代理对象Class对象
+	 * @return 返回代理对象或代理对象的Class对象
+	 */
 	private Object buildProxy(Class<?> beanClass, @Nullable String beanName,
 			@Nullable Object[] specificInterceptors, TargetSource targetSource, boolean classOnly) {
 

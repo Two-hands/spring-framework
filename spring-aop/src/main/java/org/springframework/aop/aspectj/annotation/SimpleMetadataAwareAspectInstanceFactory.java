@@ -27,6 +27,9 @@ import org.springframework.core.annotation.OrderUtils;
  *
  * @author Juergen Hoeller
  * @since 2.0.4
+ *
+ * <br/>
+ * 一个简单的创建、返回切面（Aspect）对象和切面元数据（AspectMetadata）对象的工厂
  */
 public class SimpleMetadataAwareAspectInstanceFactory extends SimpleAspectInstanceFactory
 		implements MetadataAwareAspectInstanceFactory {

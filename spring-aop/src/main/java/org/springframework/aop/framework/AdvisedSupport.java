@@ -55,8 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  *
  * <br/>
- * Advised接口基本功能实现类：
- *    - 增加或或移除
+ * Advised接口基本功能实现类：负责管理Advisors（如果是Advice，适配转换为Advisor）和被代理interfaces集合
  */
 public class AdvisedSupport extends ProxyConfig implements Advised {
 

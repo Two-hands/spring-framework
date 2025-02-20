@@ -27,6 +27,9 @@ import org.springframework.lang.Nullable;
  * @since 2.0
  * @see AspectMetadata
  * @see org.aspectj.lang.reflect.AjType
+ *
+ * <br/>
+ * 解析切面类，获取AspectMetadata对象
  */
 public interface MetadataAwareAspectInstanceFactory extends AspectInstanceFactory {
 

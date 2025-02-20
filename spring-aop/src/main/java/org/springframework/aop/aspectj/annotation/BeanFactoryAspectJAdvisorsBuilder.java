@@ -16,22 +16,21 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.aspectj.lang.reflect.PerClauseKind;
-
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.AopConfigException;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Helper for retrieving @AspectJ beans from a BeanFactory and building
@@ -40,6 +39,9 @@ import org.springframework.util.Assert;
  * @author Juergen Hoeller
  * @since 2.0.2
  * @see AnnotationAwareAspectJAutoProxyCreator
+ *
+ * <br/>
+ * 通过解析BeanFactory中所有AspectJ的bean（切面类），并根据切面类构建Advisor
  */
 public class BeanFactoryAspectJAdvisorsBuilder {
 
@@ -47,13 +49,27 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 
 	private final ListableBeanFactory beanFactory;
 
+	/*
+	用于根据切面类构建Advisor的工厂
+	 */
 	private final AspectJAdvisorFactory advisorFactory;
 
+	/*
+	缓存所有切面类bean的名称（第二次获取直接从缓存中获取已创建的Advisors）
+	 */
 	@Nullable
 	private volatile List<String> aspectBeanNames;
 
+	/*
+	缓存所有切面类bean的所有Advisors，其中key为切面bean名称，value为每个切面类的所有Advisors
+	** 注意：缓存的是【单例】切面的Advisors **
+	 */
 	private final Map<String, List<Advisor>> advisorsCache = new ConcurrentHashMap<>();
 
+	/*
+	缓存切面类bean的实例创建工厂（其实是从BeanFactory中获取非单例的实例）
+	** 注意：由于切面类此时非单例，需要每次从BeanFactory中获取切面的实例
+	 */
 	private final Map<String, MetadataAwareAspectInstanceFactory> aspectFactoryCache = new ConcurrentHashMap<>();
 
 

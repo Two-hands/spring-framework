@@ -534,8 +534,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			if (!mbd.postProcessed) {
 				try {
 					//调用MergedBeanDefinitionPostProcessor#postProcessMergedBeanDefinition
-					//用于修改BeanDefinition数据：
-					//   一般是获取Class中某些Member（Field、Method、Constructor）放入BeanDefinition，用于后续执行（场景：执行方法，注入bean）
+					//用于修改BeanDefinition数据：解析Class，获取带特定注解的Member（Field、Method、Constructor）放入BeanDefinition，并
+					//在populateBean方法中调用Member注入值
 					applyMergedBeanDefinitionPostProcessors(mbd, beanType, beanName);
 				}
 				catch (Throwable ex) {
@@ -1172,10 +1172,16 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// Candidate constructors for autowiring?
-		//通过BeanPostProcessor获取Constructors，通过Constructors创建instance
+		//调用SmartInstantiationAwareBeanPostProcessor#determineCandidateConstructors获取构造器候选者集合
+		//这里一般是AutowiredAnnotationBeanPostProcessor起作用
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			//使用有参构造器实例化bean：
+			//1、若有候选构造器
+			//2、或BeanDefinition.autowireMode=AUTOWIRE_CONSTRUCTOR（构造器自动注入模式）
+			//3、或BeanDefinition.constructorArgumentValues有构造器参数解析数据
+			//4、或用户getBean时提供了明确的构造器参数值
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 

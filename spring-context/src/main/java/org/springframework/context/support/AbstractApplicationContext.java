@@ -551,6 +551,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 			// Prepare this context for refreshing.
 			/*
+			主要做Environment环境的与准备
 				1、初始化context上下文，如：启动时间，状态；
 				2、初始化environment的PropertySource，如：替换stubPropertySource；
 				3、校验environment必要的属性值是否可解析
@@ -568,22 +569,27 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			try {
 				// Allows post-processing of the bean factory in context subclasses.
 				/*
-				 此方法可可作为子类对BeanFactory刷新前的钩子函数，对BeanFactory刷新前做一些额外扩展
-					此时：1、BeanFactory中的bean还未开始实例化，2、所有PostProcessor、BeanFactoryPostProcessor还未执行
-					允许子类对BeanFactory进行进一步处理：一般是向BeanFactory注册额外的PostProcessor、BeanFactoryPostProcessor
+				由于此时BeanFactory中BeanFactoryPostProcessor、BeanPostProcessor还未实例化：
+				   可在BeanFactory实例化和执行BeanFactoryPostProcessor前做一些额外扩展：
+				      1、向BeanFactory中添加BeanFactoryPostProcessor、BeanPostProcessor的实例或BeanDefinition
+				      ....
+				   可在BeanFactory实例化和执行BeanPostProcessor前做一些额外扩展：
+				      1、向BeanFactory中添加BeanPostProcessor的实例或BeanDefinition
+				      ....
 				 */
 				postProcessBeanFactory(beanFactory);
 
 				StartupStep beanPostProcess = this.applicationStartup.start("spring.context.beans.post-process");
 				// Invoke factory processors registered as beans in the context.
 				/*
-					执行所有BeanFactoryPostProcessor（BeanFactory中未实例化的BeanFactoryPostProcessor在此刻会进行实例化）
+					执行所有BeanFactoryPostProcessor（BeanFactory中未实例化的BeanFactoryPostProcessor在此刻进行实例化）
 					** 这里 ConfigurationClassPostProcessor 比较重要：解析配置类，注入大量额外的BeanDefinition **
 				 */
 				invokeBeanFactoryPostProcessors(beanFactory);
 				// Register bean processors that intercept bean creation.
-				// 从BeanFactory中获取所有BeanPostProcessor实例并添加到BeanFactory.beanPostProcessors中
-				// 实例化所有BeanPostProcessor
+				/*
+				实例化所有BeanFactory中未实例化的BeanPostProcessor
+				 */
 				registerBeanPostProcessors(beanFactory);
 				beanPostProcess.end();
 
@@ -605,6 +611,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
+				//最后的步骤
+				//  1、发布相关事件：ContextRefreshedEvent
+				//  2、执行所有Lifecycle类型bean的方法（Lifecycle#start）
 				finishRefresh();
 			}
 
@@ -705,6 +714,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	protected void prepareBeanFactory(ConfigurableListableBeanFactory beanFactory) {
 		// Tell the internal bean factory to use the context's class loader etc.
 		beanFactory.setBeanClassLoader(getClassLoader());
+		//向BeanFactory中添加SpEL表达式解析器
 		beanFactory.setBeanExpressionResolver(new StandardBeanExpressionResolver(beanFactory.getBeanClassLoader()));
 		beanFactory.addPropertyEditorRegistrar(new ResourceEditorRegistrar(this, getEnvironment()));
 
@@ -773,7 +783,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 * <p>Must be called before singleton instantiation.
 	 */
 	protected void invokeBeanFactoryPostProcessors(ConfigurableListableBeanFactory beanFactory) {
-		//执行ApplicationContext和BeanFactory中所有的BeanFactoryPostProcessor
+		//1、执行ApplicationContext中已经实例化的BeanFactoryPostProcessor
+		//2、实例化BeanFactory中注册的BeanFactoryPostProcessor，并执行
 		PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
 
 		// Detect a LoadTimeWeaver and prepare for weaving, if found in the meantime
@@ -932,6 +943,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		// (such as a PropertySourcesPlaceholderConfigurer bean) registered any before:
 		// at this point, primarily for resolution in annotation attribute values.
 		if (!beanFactory.hasEmbeddedValueResolver()) {
+			//添加字符串解析器，根据字符串配置（key）获取结果（value），这里添加一个Resolver（lambda）
+			// 实际调用Environment#resolvePlaceholders根据key获取value
 			beanFactory.addEmbeddedValueResolver(strVal -> getEnvironment().resolvePlaceholders(strVal));
 		}
 

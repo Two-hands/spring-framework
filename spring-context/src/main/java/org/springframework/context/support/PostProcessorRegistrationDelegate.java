@@ -226,6 +226,13 @@ final class PostProcessorRegistrationDelegate {
 		// to ensure that your proposal does not result in a breaking change:
 		// https://github.com/spring-projects/spring-framework/issues?q=PostProcessorRegistrationDelegate+is%3Aclosed+label%3A%22status%3A+declined%22
 
+		/*
+		实例化所有BeanPostProcessor，并添加到BeanFactory.beanPostProcessors集合中，按顺序添加：
+		   1、先添加实现PriorityOrdered接口的BeanPostProcessor
+		   2、再添加实现Ordered接口的BeanPostProcessor
+		   3、然后添加其他普通的BeanPostProcessor（未实现PriorityOrdered或Ordered接口）
+		   4、最后添加实现MergedBeanDefinitionPostProcessor接口的BeanPostProcessor
+		 */
 		String[] postProcessorNames = beanFactory.getBeanNamesForType(BeanPostProcessor.class, true, false);
 
 		// Register BeanPostProcessorChecker that logs an info message when

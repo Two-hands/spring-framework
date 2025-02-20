@@ -16,8 +16,6 @@
 
 package org.springframework.beans.factory.config;
 
-import java.beans.PropertyEditor;
-
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 import org.springframework.beans.TypeConverter;
@@ -29,6 +27,8 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.core.metrics.ApplicationStartup;
 import org.springframework.lang.Nullable;
 import org.springframework.util.StringValueResolver;
+
+import java.beans.PropertyEditor;
 
 /**
  * Configuration interface to be implemented by most bean factories. Provides
@@ -211,8 +211,14 @@ public interface ConfigurableBeanFactory extends HierarchicalBeanFactory, Single
 
 	/**
 	 * Add a String resolver for embedded values such as annotation attributes.
+	 * <br/>
+	 * 添加字符串解析器：
+	 *    解析嵌入式值（如@Value注释value属性值），根据嵌入式值（key）获取结果（value）
+	 * 为添加字符串解析器。
+	 *
 	 * @param valueResolver the String resolver to apply to embedded values
 	 * @since 3.0
+	 *
 	 */
 	void addEmbeddedValueResolver(StringValueResolver valueResolver);
 

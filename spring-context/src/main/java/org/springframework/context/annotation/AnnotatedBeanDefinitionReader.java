@@ -48,8 +48,8 @@ import java.util.function.Supplier;
  *
  * <br/>
  *  适配器：用于bean类注册
- *  根据对象（Class）注册BeanDefinition：
- *    1、根据Class创建BeanDefinition
+ *  根据Class对象创建BeanDefinition对象并注册：
+ *    1、根据Class对象创建BeanDefinition
  *    1、解析Class的注解，填充BeanDefinition必要信息（含是否增强代理逻辑）
  *    2、注册BeanDefinition到BeanFactory
  */
@@ -106,10 +106,10 @@ public class AnnotatedBeanDefinitionReader {
 		  BeanFactoryPostProcessor：
 		      1、ConfigurationClassPostProcessor：** 重要 **
 		      2、EventListenerMethodProcessor
-		      3、PersistenceAnnotationBeanPostProcessor
 		  BeanPostProcessor：
 		      1、AutowiredAnnotationBeanPostProcessor
 		      2、CommonAnnotationBeanPostProcessor
+		      3、PersistenceAnnotationBeanPostProcessor
 		  other：
 		      1、DefaultEventListenerFactory
 		      2、AnnotationAwareOrderComparator
@@ -242,7 +242,7 @@ public class AnnotatedBeanDefinitionReader {
 		if (this.conditionEvaluator.shouldSkip(abd.getMetadata())) {
 			return;
 		}
-		//设置该类的为Configuration（配置类 - lite模式）候选者
+		//设置该类的为Configuration（配置类 - lite模式）候选者（会作为ConfigurationClass解析）
 		abd.setAttribute(ConfigurationClassUtils.CANDIDATE_ATTRIBUTE, Boolean.TRUE);
 		abd.setInstanceSupplier(supplier);
 		/*

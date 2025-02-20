@@ -177,6 +177,7 @@ class ConfigurationClassParser {
 			}
 		}
 
+		//处理配置类中通过@Import注解引用的DeferredImportSelector（已实例化）
 		this.deferredImportSelectorHandler.process();
 	}
 
@@ -292,9 +293,10 @@ class ConfigurationClassParser {
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
 				// The config class is annotated with @ComponentScan -> perform the scan immediately
-				//根据@ComponentScan注解扫描指定包下所有类，过滤掉不符合的类
-				// 将符合条件的类并将其解析为BeanDefinition注册到BeanDefinitionRegistry并将BeanDefinition返回
-				//将其中符合配置候选条件的类当做新配置类进行解析
+				//根据@ComponentScan注解扫描特定路径下的class文件，根据过滤条件过滤出满足的class，并封装
+				//为ScannedGenericBeanDefinition（含SimpleAnnotationMetadata）
+				//若BeanDefinitionRegistry中不含该ScannedGenericBeanDefinition，则[直接注册]
+				//最后返回继续按照ConfigurationClass解析
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 				// Check the set of scanned definitions for any further config classes and parse recursively if needed
@@ -311,10 +313,18 @@ class ConfigurationClassParser {
 		}
 
 		// Process any @Import annotations
-		//获取类上所有@Import注解指定的所有类，解析这些导入的类
+		// getImports(sourceClass) - 获取原Class/Metadata所指类上标注的所有注解（注解类名以java开头的除外），【获取其中的@Import注解】进行处理：
+		// 解析@Import注解指定的Class类型：
+		//    1、若类型为DeferredImportSelector：【实例化后】放到deferredImportSelectorHandler中等本批次所有配置类解析完后统一处理
+		//    2、若类型为ImportSelector：【实例化后】立即调用ImportSelector#selectImports获取所有要导入的类名集合，调用processImports处理每个类名
+		//    3、若类型为ImportBeanDefinitionRegistrar：【实例化后】后放入configClass.importBeanDefinitionRegistrars中等待后续处理
+		//    4、若类型不为以上3种：按照配置类调用processConfigurationClass方法继续处理
 		processImports(configClass, sourceClass, getImports(sourceClass), filter, true);
 
 		// Process any @ImportResource annotations
+		//解析@ImportResource注解：
+		// 按照注解中指定的位置和BeanDefinitionReader（如：XmlBeanDefinitionReader）：
+		//      读取指定位置下的文件，将文件路径放入configClass.importedResources中
 		AnnotationAttributes importResource =
 				AnnotationConfigUtils.attributesFor(sourceClass.getMetadata(), ImportResource.class);
 		if (importResource != null) {
@@ -328,29 +338,30 @@ class ConfigurationClassParser {
 		}
 
 		// Process individual @Bean methods
-		//获取类中用@Bean标注的所有方法
+		//解析@Bean注解：获取类中的所有含@Bean注解的方法（MethodMetadata），将其放入configClass.beanMethods
 		Set<MethodMetadata> beanMethods = retrieveBeanMethodMetadata(sourceClass);
 		for (MethodMetadata methodMetadata : beanMethods) {
 			configClass.addBeanMethod(new BeanMethod(methodMetadata, configClass));
 		}
 
 		// Process default methods on interfaces
-		//处理类的所有接口的默认方法（有@Bean注解）
+		//解析@Bean注解：获取类中的所有接口中含@Bean注解的方法（MethodMetadata），将其放入configClass.beanMethods
 		processInterfaces(configClass, sourceClass);
 
 		// Process superclass, if any
+		// 若类有父类（并且类名不以java开头），按以上逻辑迭代解析其父类（父类的父类....）
 		if (sourceClass.getMetadata().hasSuperClass()) {
 			String superclass = sourceClass.getMetadata().getSuperClassName();
 			if (superclass != null && !superclass.startsWith("java") &&
 					!this.knownSuperclasses.containsKey(superclass)) {
 				this.knownSuperclasses.put(superclass, configClass);
 				// Superclass found, return its annotation metadata and recurse
-				//处理父类
 				return sourceClass.getSuperClass();
 			}
 		}
 
 		// No superclass -> processing is complete
+		//类已经解析完成
 		return null;
 	}
 

@@ -16,23 +16,6 @@
 
 package org.springframework.context.annotation;
 
-import java.beans.PropertyDescriptor;
-import java.io.Serializable;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import org.springframework.aop.TargetSource;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.BeanUtils;
@@ -43,11 +26,7 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.InitDestroyAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.annotation.InjectionMetadata;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
-import org.springframework.beans.factory.config.DependencyDescriptor;
-import org.springframework.beans.factory.config.EmbeddedValueResolver;
-import org.springframework.beans.factory.config.InstantiationAwareBeanPostProcessor;
+import org.springframework.beans.factory.config.*;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.core.BridgeMethodResolver;
 import org.springframework.core.MethodParameter;
@@ -55,11 +34,14 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.jndi.support.SimpleJndiBeanFactory;
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
-import org.springframework.util.StringValueResolver;
+import org.springframework.util.*;
+
+import java.beans.PropertyDescriptor;
+import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * {@link org.springframework.beans.factory.config.BeanPostProcessor} implementation
@@ -529,8 +511,10 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 		String name = element.name;
 
 		if (factory instanceof AutowireCapableBeanFactory autowireCapableBeanFactory) {
+			//若没有指定名称，并且字段名称或方法名称（去掉方法set前缀，然后剩余部分首字母小写）作为beanName在BeanFactory中不存在，则需要使用按类型获取值
 			if (this.fallbackToDefaultTypeMatch && element.isDefaultName && !factory.containsBean(name)) {
 				autowiredBeanNames = new LinkedHashSet<>();
+				//先按类型获取，然后根据名称匹配
 				resource = autowireCapableBeanFactory.resolveDependency(
 						element.getDependencyDescriptor(), requestingBeanName, autowiredBeanNames, null);
 				if (resource == null) {
@@ -538,6 +522,7 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 				}
 			}
 			else {
+				//按名称获取值进行注入
 				resource = autowireCapableBeanFactory.resolveBeanByName(name, element.getDependencyDescriptor());
 				autowiredBeanNames = Collections.singleton(name);
 			}
@@ -679,20 +664,32 @@ public class CommonAnnotationBeanPostProcessor extends InitDestroyAnnotationBean
 			String resourceName = resource.name();
 			Class<?> resourceType = resource.type();
 			this.isDefaultName = !StringUtils.hasLength(resourceName);
+
+			//解析Resource.name属性值
 			if (this.isDefaultName) {
+				//Resource.name没有指定，使用默认名称模式
+				// 1、若注解在字段（Field）上，直接使用字段名称
+				// 2、若注解在set前缀的方法（Method）上，将方法名set后的部分（首字母小写）作为名称
 				resourceName = this.member.getName();
 				if (this.member instanceof Method && resourceName.startsWith("set") && resourceName.length() > 3) {
 					resourceName = StringUtils.uncapitalizeAsProperty(resourceName.substring(3));
 				}
 			}
 			else if (embeddedValueResolver != null) {
+				//Resource.name有指定，将其解析结果（可能包含表达式，需要解析表达式替换真实值）作为需要注入值的名称
 				resourceName = embeddedValueResolver.resolveStringValue(resourceName);
 			}
+
+			//解析Resource.type属性值
 			if (Object.class != resourceType) {
+				//Resource.type属性值有指定：
+				// 1、若在字段上，校验字段类型与Resource.type值相同或字段类型是Resource.type的超类/接口
+				// 2、若在方法上，校验方法参数类型与Resource.type值相同或方法参数类型是Resource.type的超类/接口
 				checkResourceType(resourceType);
 			}
 			else {
 				// No resource type specified... check field/method.
+				//Resource.type属性值未指定（默认Object）：获取字段类型或方法参数类型
 				resourceType = getResourceType();
 			}
 			this.name = (resourceName != null ? resourceName : "");

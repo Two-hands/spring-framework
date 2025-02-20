@@ -92,8 +92,10 @@ class ConstructorResolver {
 		BeanWrapperImpl bw = new BeanWrapperImpl();
 		this.beanFactory.initBeanWrapper(bw);
 
+		//实例化bean使用的构造器
 		Constructor<?> constructorToUse = null;
 		ArgumentsHolder argsHolderToUse = null;
+		//构造器需要的实际的参数值
 		Object[] argsToUse = null;
 
 		if (explicitArgs != null) {
@@ -116,8 +118,10 @@ class ConstructorResolver {
 			}
 		}
 
+		//最后需要实例化所需的构造器、构造器所需参数值至少有一个尚未指定：
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
+			//candidates要么是提供的构造器，要么立即获取class的构造器
 			Constructor<?>[] candidates = chosenCtors;
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();
@@ -132,20 +136,24 @@ class ConstructorResolver {
 				}
 			}
 
+
+			//候选的构造器只有一个，并且没有提供明确的构造器参数（参数值需要从BeanFactory中获取）
 			if (candidates.length == 1 && explicitArgs == null && !mbd.hasConstructorArgumentValues()) {
 				Constructor<?> uniqueCandidate = candidates[0];
+				//候选唯一的构造器是无参构造器
 				if (uniqueCandidate.getParameterCount() == 0) {
 					synchronized (mbd.constructorArgumentLock) {
 						mbd.resolvedConstructorOrFactoryMethod = uniqueCandidate;
 						mbd.constructorArgumentsResolved = true;
 						mbd.resolvedConstructorArguments = EMPTY_ARGS;
 					}
-					bw.setBeanInstance(instantiate(beanName, mbd, uniqueCandidate, EMPTY_ARGS));
+					bw.setBeanInstance(instantiate(beanName, mbd, uniqueCandidate, EMPTY_ARGS));//无参构造器实例化bean
 					return bw;
 				}
 			}
 
 			// Need to resolve the constructor.
+			//如果有提供构造器，或BeanDefinition.autowireMode=AUTOWIRE_CONSTRUCTOR，则需要自动注入构造器参数值
 			boolean autowiring = (chosenCtors != null ||
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null;
@@ -157,6 +165,7 @@ class ConstructorResolver {
 			else {
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				resolvedValues = new ConstructorArgumentValues();
+				//解析cargs中indexedArgumentValues与genericArgumentValues，若有值则将结果放入resolvedValues
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 			}
 
@@ -165,14 +174,17 @@ class ConstructorResolver {
 			Set<Constructor<?>> ambiguousConstructors = null;
 			Deque<UnsatisfiedDependencyException> causes = null;
 
+			//遍历构造器（提供或直接从Class中获取）
 			for (Constructor<?> candidate : candidates) {
 				int parameterCount = candidate.getParameterCount();
 
 				if (constructorToUse != null && argsToUse != null && argsToUse.length > parameterCount) {
 					// Already found greedy constructor that can be satisfied ->
 					// do not look any further, there are only less greedy constructors left.
+					//已经发现符合的构造器和参数值，无需再寻找
 					break;
 				}
+
 				if (parameterCount < minNrOfArgs) {
 					continue;
 				}
@@ -191,6 +203,7 @@ class ConstructorResolver {
 								}
 							}
 						}
+						//获取构造器需要的所有参数值
 						argsHolder = createArgumentArray(beanName, mbd, resolvedValues, bw, paramTypes, paramNames,
 								getUserDeclaredConstructor(candidate), autowiring, candidates.length == 1);
 					}
@@ -220,6 +233,7 @@ class ConstructorResolver {
 				if (typeDiffWeight < minTypeDiffWeight) {
 					constructorToUse = candidate;
 					argsHolderToUse = argsHolder;
+					//将构造器所需的实际参数值赋予argsToUse
 					argsToUse = argsHolder.arguments;
 					minTypeDiffWeight = typeDiffWeight;
 					ambiguousConstructors = null;
@@ -255,6 +269,7 @@ class ConstructorResolver {
 			}
 
 			if (explicitArgs == null && argsHolderToUse != null) {
+				//将解析后的构造器及参数相关数据放入BeanDefinition，以免后面再次使用
 				argsHolderToUse.storeCache(mbd, constructorToUse);
 			}
 		}
@@ -688,6 +703,7 @@ class ConstructorResolver {
 			// Try to find matching constructor argument value, either indexed or generic.
 			ConstructorArgumentValues.ValueHolder valueHolder = null;
 			if (resolvedValues != null) {
+				//尝试从resolvedValues（ConstructorArgumentValues）中获取参数值
 				valueHolder = resolvedValues.getArgumentValue(paramIndex, paramType, paramName, usedValueHolders);
 				// If we couldn't find a direct match and are not supposed to autowire,
 				// let's try the next generic, untyped argument value as fallback:
@@ -741,6 +757,7 @@ class ConstructorResolver {
 				try {
 					ConstructorDependencyDescriptor desc = new ConstructorDependencyDescriptor(methodParam, true);
 					Set<String> autowiredBeanNames = new LinkedHashSet<>(2);
+					//中beanFactory中获取到bean作为构造器的参数值
 					Object arg = resolveAutowiredArgument(
 							desc, paramType, beanName, autowiredBeanNames, converter, fallback);
 					if (arg != null) {

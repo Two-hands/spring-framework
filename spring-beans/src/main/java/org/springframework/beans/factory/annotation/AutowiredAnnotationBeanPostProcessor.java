@@ -120,6 +120,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see #setAutowiredAnnotationType
  * @see Autowired
  * @see Value
+ *
  */
 public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationAwareBeanPostProcessor,
 		MergedBeanDefinitionPostProcessor, BeanRegistrationAotProcessor, PriorityOrdered, BeanFactoryAware {
@@ -313,6 +314,16 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 		return beanClass;
 	}
 
+
+	/**
+	 * 解析类的所有构造器：
+	 *     1、当没有required=true时，会将所有带自动注入注解的构造器 + 无参构造器（无论是否含注解）返回
+	 *     2、当有有一个required=true时（且只能有一个），其他构造器不能含有自动注入注解，只会返回带注解的这个构造器
+	 * @param beanClass the raw class of the bean (never {@code null})
+	 * @param beanName the name of the bean
+	 * @return null或构造器数组
+	 * @throws BeanCreationException 异常
+	 */
 	@Override
 	@Nullable
 	public Constructor<?>[] determineCandidateConstructors(Class<?> beanClass, final String beanName)
@@ -336,20 +347,34 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 								"Resolution of declared constructors on bean Class [" + beanClass.getName() +
 								"] from ClassLoader [" + beanClass.getClassLoader() + "] failed", ex);
 					}
+					//类中所有含有自动注入注解的构造器（其中含required属性为true的构造器个数那么为0，要么为1）
 					List<Constructor<?>> candidates = new ArrayList<>(rawCandidates.length);
+					//若不为null，则仅有一个带required属性值为true的自动注入注解的构造器
 					Constructor<?> requiredConstructor = null;
+					//若不为null，则是【不含】自动注入注解的【无参构造器】
 					Constructor<?> defaultConstructor = null;
+					//如果类是kotlin，检测私有构造器，否则一律返回null
 					Constructor<?> primaryConstructor = BeanUtils.findPrimaryConstructor(beanClass);
 					int nonSyntheticConstructors = 0;
+
+					//遍历类的所有构造器：
+					//1、若构造器有自动注入注解：
+					//      a、若注解的required属性值为true，赋予requiredConstructor（有且仅有一个）
+					//      b、若注解的required属性值为false，且requiredConstructor=null，将其放入candidates集合中
+					//2、若构造器无自动注入注解，并且无参数，赋予给defaultConstructor变量（无参构造器只有一个）
 					for (Constructor<?> candidate : rawCandidates) {
 						if (!candidate.isSynthetic()) {
+							//构造器不是合成（不是synthetic）则计数
 							nonSyntheticConstructors++;
 						}
 						else if (primaryConstructor != null) {
 							continue;
 						}
+
+						//获取构造器上的自动注入注解
 						MergedAnnotation<?> ann = findAutowiredAnnotation(candidate);
 						if (ann == null) {
+							//构造器注解获取失败，可能目前是代理（CGLIB）类，尝试获取目标类，再尝试获取目标类指定构造器的自动注入注解
 							Class<?> userClass = ClassUtils.getUserClass(beanClass);
 							if (userClass != beanClass) {
 								try {
@@ -362,7 +387,10 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 								}
 							}
 						}
+
+						//构造器上有对应注解
 						if (ann != null) {
+							//如果有多个构造器，当有一个构造器含注解且其required=true，其他的构造器不能再含自动注入注解
 							if (requiredConstructor != null) {
 								throw new BeanCreationException(beanName,
 										"Invalid autowire-marked constructor: " + candidate +
@@ -371,6 +399,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 							}
 							boolean required = determineRequiredStatus(ann);
 							if (required) {
+								//如果有多个构造器，当有一个构造器含注解且其required=true，其他的构造器不能再含自动注入注解
 								if (!candidates.isEmpty()) {
 									throw new BeanCreationException(beanName,
 											"Invalid autowire-marked constructors: " + candidates +
@@ -385,6 +414,8 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 							defaultConstructor = candidate;
 						}
 					}
+
+
 					if (!candidates.isEmpty()) {
 						// Add default constructor to list of optional constructors, as fallback.
 						if (requiredConstructor == null) {
@@ -401,10 +432,12 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 						candidateConstructors = candidates.toArray(EMPTY_CONSTRUCTOR_ARRAY);
 					}
 					else if (rawCandidates.length == 1 && rawCandidates[0].getParameterCount() > 0) {
+						//有且只有一个构造器，且有参数
 						candidateConstructors = new Constructor<?>[] {rawCandidates[0]};
 					}
 					else if (nonSyntheticConstructors == 2 && primaryConstructor != null &&
 							defaultConstructor != null && !primaryConstructor.equals(defaultConstructor)) {
+						//与Katlin
 						candidateConstructors = new Constructor<?>[] {primaryConstructor, defaultConstructor};
 					}
 					else if (nonSyntheticConstructors == 1 && primaryConstructor != null) {
@@ -417,6 +450,23 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 				}
 			}
 		}
+		/*
+		 返回的构造器情况分析（这里的注解特指自动注入注解）：
+		   1、若只含一个构造器：
+		      a、不含注解的无参构造器：返回null
+		      b、含注解的无参构造器：返回这个构造器
+		      c、不含注解的有参构造器：返回这个构造器
+		      d、含注解的有参构造器：返回这个构造器
+
+		   2、含多个构造器（含无参构造器）：
+		      a、所有构造器均不含注解：返回null
+		      b、无参构造器含注解（required=true/false），有参构造器不含注解：返回无参构造器
+		      c、无参构造器不含注解，有参构造器含注解：当required=true时仅返回有参构造器，当required=false返回无参构造器和有参构造器
+		      d、无参构造器（required=false）和有参构造器（required=false）均含注解：返回无参构造器和有参构造器
+		 注意：
+		   * 当有多个构造器时，可以有任意多个构造器含自动注入注解（所有含注解的required=false）这些构造器都会返回（这时会把无参构造器也带上【就算没有注解】）;
+		   * 当有多个构造器时，若有一个构造器含有自动注入注解（且required=true【只能有一个】），其他构造器不能含自动注入注解（无论required的值）
+		 */
 		return (candidateConstructors.length > 0 ? candidateConstructors : null);
 	}
 
@@ -522,10 +572,12 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 		Class<?> targetClass = clazz;
 
 		do {
+			//获取class中带自动注入注解的Field
 			final List<InjectionMetadata.InjectedElement> fieldElements = new ArrayList<>();
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
 				MergedAnnotation<?> ann = findAutowiredAnnotation(field);
 				if (ann != null) {
+					//不支持静态字段
 					if (Modifier.isStatic(field.getModifiers())) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation is not supported on static fields: " + field);
@@ -537,6 +589,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 				}
 			});
 
+			//获取class和其接口(default方法)中带自动注入注解的Method
 			final List<InjectionMetadata.InjectedElement> methodElements = new ArrayList<>();
 			ReflectionUtils.doWithLocalMethods(targetClass, method -> {
 				Method bridgedMethod = BridgeMethodResolver.findBridgedMethod(method);
@@ -545,12 +598,14 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 				}
 				MergedAnnotation<?> ann = findAutowiredAnnotation(bridgedMethod);
 				if (ann != null && method.equals(ClassUtils.getMostSpecificMethod(method, clazz))) {
+					//不支持静态方法
 					if (Modifier.isStatic(method.getModifiers())) {
 						if (logger.isInfoEnabled()) {
 							logger.info("Autowired annotation is not supported on static methods: " + method);
 						}
 						return;
 					}
+					//自动注入注解建议用在含参数的方法上（不含参数的方法上用类似注解无意义）
 					if (method.getParameterCount() == 0) {
 						if (method.getDeclaringClass().isRecord()) {
 							// Annotations on the compact constructor arguments made available on accessors, ignoring.
@@ -573,6 +628,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 		}
 		while (targetClass != null && targetClass != Object.class);
 
+		//返回clazz本身（及其父类、接口）的Field和Method
 		return InjectionMetadata.forElements(elements, clazz);
 	}
 
@@ -718,6 +774,9 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 				}
 			}
 			else {
+				//获取需要被注入的值：
+				//1、若字段上有@Lazy注解，返回代理对象（目标对象延迟从BeanFactory中获取）
+				//2、若字段上无@Lazy注解，直接获取目标对象bean
 				value = resolveFieldValue(field, bean, beanName);
 			}
 			if (value != null) {
@@ -799,6 +858,9 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 				}
 			}
 			else {
+				//获取需要注入的参数值：
+				//1、若方法上有@Lazy注解，返回代理对象（目标对象延迟从BeanFactory中获取）作为参数值
+				//2、若方法上无@Lazy注解，直接获取目标对象bean作为参数值
 				arguments = resolveMethodArguments(method, bean, beanName);
 			}
 			if (arguments != null) {

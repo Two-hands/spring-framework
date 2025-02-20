@@ -115,7 +115,8 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 		}
 
 		if (bean instanceof Advised advised) {
-			//bean本身是Advised类型，调用Advised#addAdvisor添加advisor
+			//若bean本身就是代理对象（CGLIB与JDK生成的代理对象都会额外代理Advised接口，见AopProxyUtils#completeProxiedInterfaces）
+			// 如果this.advisor符合，直接添加
 			if (!advised.isFrozen() && isEligible(AopUtils.getTargetClass(bean))) {
 				// Add our local Advisor to the existing proxy's Advisor chain.
 				if (this.beforeExistingAdvisors) {

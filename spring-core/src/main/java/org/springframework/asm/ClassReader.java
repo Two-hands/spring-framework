@@ -590,6 +590,15 @@ public class ClassReader {
 
 		// Visit the class declaration. The minor_version and major_version fields start 6 bytes before
 		// the first constant pool entry, which itself starts at cpInfoOffsets[1] - 1 (by definition).
+		/*
+		读取类的基本信息：
+		   1、version - 版本号
+		   2、accessFlags - 访问标志，如：public、abstract、interface...
+		   3、thisClass - 目标类的全限定类名
+		   4、signature - 签名
+		   5、superClass  目标类的父类的全限定类名
+		   6、目标类的所有接口
+		 */
 		classVisitor.visit(
 				readInt(cpInfoOffsets[1] - 7), accessFlags, thisClass, signature, superClass, interfaces);
 
@@ -620,6 +629,7 @@ public class ClassReader {
 		}
 
 		// Visit the RuntimeVisibleAnnotations attribute.
+		//读取类上运行时（RetentionPolicy.RUNTIME）的注解
 		if (runtimeVisibleAnnotationsOffset != 0) {
 			int numAnnotations = readUnsignedShort(runtimeVisibleAnnotationsOffset);
 			int currentAnnotationOffset = runtimeVisibleAnnotationsOffset + 2;
@@ -734,6 +744,7 @@ public class ClassReader {
 		}
 
 		// Visit the InnerClasses attribute.
+		// 读取目标类的内部类
 		if (innerClassesOffset != 0) {
 			int numberOfClasses = readUnsignedShort(innerClassesOffset);
 			int currentClassesOffset = innerClassesOffset + 2;
@@ -759,11 +770,15 @@ public class ClassReader {
 		// Visit the fields and methods.
 		int fieldsCount = readUnsignedShort(currentOffset);
 		currentOffset += 2;
+
+		//读取字段，以及字段上的注解
 		while (fieldsCount-- > 0) {
 			currentOffset = readField(classVisitor, context, currentOffset);
 		}
 		int methodsCount = readUnsignedShort(currentOffset);
 		currentOffset += 2;
+
+		//读取方法，以及方法上的注解
 		while (methodsCount-- > 0) {
 			currentOffset = readMethod(classVisitor, context, currentOffset);
 		}

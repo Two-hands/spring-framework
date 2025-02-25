@@ -334,13 +334,20 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 
 		for (String beanName : candidateNames) {
 			BeanDefinition beanDef = registry.getBeanDefinition(beanName);
-			// BeanDefinition含有ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE属性，表示该配置类已经被处理过，略过
+			// 给"配置类"打上标签：BeanDefinition.attributes含有ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE
+			//打"配置类"标签，见：ConfigurationClassUtils#checkConfigurationClassCandidate
+			// BeanDefinition已经处理过（已经被打上了"配置类"的标签）
 			if (beanDef.getAttribute(ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE) != null) {
 				if (logger.isDebugEnabled()) {
 					logger.debug("Bean definition has already been processed as a configuration class: " + beanDef);
 				}
 			}
-			//没有处理过的类，校验是否可以作为配置类候选
+			//是否可以作为"配置类"：
+			// 通过BeanDefinition获取AnnotationMetadata的注解判断是否为"配置类"候选者：
+			//    1、类上含有@Configuration注解
+			//    2、类为非接口，且类上含有@Component、@ComponentScan、@Import、@ImportResource，或方法上含有@Bean
+			//    3、或BeanDefinition.attributes含有ConfigurationClassUtils.CANDIDATE_ATTRIBUTE属性
+			// 若满足以上任意一条打上ConfigurationClassUtils.CONFIGURATION_CLASS_ATTRIBUTE标签，为"配置类"
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
 				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
@@ -385,6 +392,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
 			StartupStep processConfig = this.applicationStartup.start("spring.context.config-classes.parse");
+			//批量解析"配置类"
 			parser.parse(candidates);
 			parser.validate();
 
@@ -397,9 +405,9 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 						registry, this.sourceExtractor, this.resourceLoader, this.environment,
 						this.importBeanNameGenerator, parser.getImportRegistry());
 			}
-			//处理配置类中解析完成的各个组件：
-			// 1、带有@Bean注解的方法转换为BeanDefinition并注入到registry
-			// 2、带有@Bean注解的方法转换为BeanDefinition并注入到registry
+			//将解析后的"配置类"及其组件注册到BeanFactory：
+			// 1、此"配置类"被其他"配置类"导入，若其他所有"配置类"均@Conditional失败，且"配置类"也失败，则不注册此"配置类"的数据到BeanFactory[以ConfigurationPhase.REGISTER_BEAN]
+			// 2、"配置类"及其接口中带有@Bean注解的方法转换为BeanDefinition并注入到registry
 			// 3、带有@ImportResource注解：通过注解中指定的BeanDefinitionReader解析location指定的文件，并转换为BeanDefinition后注入到registry
 			// 4、带有@Import注解：并调ImportBeanDefinitionRegistrar#registerBeanDefinitions（已实例化）方法将特定BeanDefinition注入到registry
 			this.reader.loadBeanDefinitions(configClasses);

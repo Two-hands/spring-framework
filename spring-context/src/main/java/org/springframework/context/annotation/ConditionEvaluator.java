@@ -91,33 +91,32 @@ class ConditionEvaluator {
 	public boolean shouldSkip(@Nullable AnnotatedTypeMetadata metadata, @Nullable ConfigurationPhase phase) {
 
 		if (metadata == null || !metadata.isAnnotated(Conditional.class.getName())) {
-			//没有注解元数据或没有含含@Conditional注解，不做处理，直接视为满足条件
+			//metadata为null，则不用跳过
+			//metadata没有含@Conditional注解，默认为满足条件，不用跳过
 			return false;
 		}
 
-		/*
-		根据类元数据推断出phase的值后才能进行判断
-		  phase为null时，若满足如下2个条件：
-		     1、类上有@Component、@ComponentScan、@Import、@ImportResource注解
-		     2、或类中的方法含有@Bean注解
-		  则phase=ConfigurationPhase.PARSE_CONFIGURATION，即该类作为配置类处理
-		  否则作为普通bean类处理（phase=ConfigurationPhase.REGISTER_BEAN）
-		 */
+
 		if (phase == null) {
+			//尝试判断phase的值：
 			if (metadata instanceof AnnotationMetadata annotationMetadata &&
 					ConfigurationClassUtils.isConfigurationCandidate(annotationMetadata)) {
-				//判断配置类是否满足条件？
+				//若metadata为类信息（AnnotationMetadata），且：
+				//  1、非接口
+				//  2、含有@Component、@ComponentScan、@Import、@ImportResource
+				//  3、类中方法上含有@Bean
+				//则按照 ConfigurationPhase.PARSE_CONFIGURATION "配置类"条件进行判断
 				return shouldSkip(metadata, ConfigurationPhase.PARSE_CONFIGURATION);
 			}
-			//判断bean类是否满足条件？ 是 - 注册
+			//若metadata为方法信息（MethodMetadata）
+			//则按照 ConfigurationPhase.REGISTER_BEAN "普通bean"条件进行判断
 			return shouldSkip(metadata, ConfigurationPhase.REGISTER_BEAN);
 		}
 
-		//获取类上的所有@Conditional注解，获取其value值，将其实例化
+		//获取类或方法上的@Conditional注解（含Condition具体类型），解析并实例化Condition
 		List<Condition> conditions = new ArrayList<>();
 		for (String[] conditionClasses : getConditionClasses(metadata)) {
 			for (String conditionClass : conditionClasses) {
-				//根据类名称实例化Condition
 				Condition condition = getCondition(conditionClass, this.context.getClassLoader());
 				conditions.add(condition);
 			}
@@ -131,12 +130,17 @@ class ConditionEvaluator {
 				requiredPhase = configurationCondition.getConfigurationPhase();
 			}
 
-			//不满足，不处理该类（跳过）
+			//  requiredPhase - 代表Condition需要验证的类型："配置类" 或 "普通bean"
+			//  phase - 当前被验证的目标所属类型
+			//  若requiredPhase有指定，则表示Condition只对phase=Condition.phase匹配的目标感兴趣（才会进行matches操作）
+			//  若requiredPhase没有指定，则表示Condition可以对所有类型进行matches操作
 			if ((requiredPhase == null || requiredPhase == phase) && !condition.matches(this.context, metadata)) {
+				//不满足条件，跳过
 				return true;
 			}
 		}
 
+		//不跳过
 		return false;
 	}
 

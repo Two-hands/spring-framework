@@ -146,12 +146,13 @@ public abstract class ConfigurationClassUtils {
 		//解析类上的@Configuration注解
 		Map<String, Object> config = metadata.getAnnotationAttributes(Configuration.class.getName());
 		if (config != null && !Boolean.FALSE.equals(config.get("proxyBeanMethods"))) {
-			//配置类采用full模式：@Configuration#proxyBeanMethods=true
+			//配置类采用full模式：@Configuration.proxyBeanMethods=true
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_FULL);
 		}
-		//配置类采用lite模式：1、有@Configuration注解且proxyBeanMethods=false；
-		//2、非接口，类含有@Component、@ComponentScan、@Import、@ImportResource注解；或方法含有@Bean注解
-		//3、通过AnnotatedBeanDefinitionReader#registerBean方法添加的BeanDefinition
+		//配置类采用lite模式：
+		//1、有@Configuration注解且proxyBeanMethods=false
+		//2、非接口，类含有@Component、@ComponentScan、@Import、@ImportResource注解，或方法含有@Bean注解
+		//3、通过AnnotatedBeanDefinitionReader#registerBean方法添加的BeanDefinition（会有CANDIDATE_ATTRIBUTE属性）
 		else if (config != null || Boolean.TRUE.equals(beanDef.getAttribute(CANDIDATE_ATTRIBUTE)) ||
 				isConfigurationCandidate(metadata)) {
 			beanDef.setAttribute(CONFIGURATION_CLASS_ATTRIBUTE, CONFIGURATION_CLASS_LITE);

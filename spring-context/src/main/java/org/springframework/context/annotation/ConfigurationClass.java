@@ -45,35 +45,32 @@ import java.util.*;
  */
 final class ConfigurationClass {
 
+	//当前"配置类"的AnnotationMetadata（一般为SimpleAnnotationMetadata或StandardAnnotationMetadata）
 	private final AnnotationMetadata metadata;
 
+	//当前"配置类"的资源信息，表示资源的文件加载位置
 	private final Resource resource;
 
-	/*
-	bean的名称
-	 */
+	//当前"配置类"的bean名称
 	@Nullable
 	private String beanName;
 
-	/*
-	记录该ConfigurationClass被哪些其他配置类导入（引用），因为一个类可能被多个配置内导入
-	 */
+
+	//记录当前"配置类"被其他哪些配置类导入的:
+	// 1、若当前"配置类"为"配置类A"的内部类，则importedBy包含"配置类A"
+	// 2、当前"配置类"是"配置类A"通过@Import导入，则importedBy包含"配置类A"
 	private final Set<ConfigurationClass> importedBy = new LinkedHashSet<>(1);
 
-	/*
-	被@Bean注解标注的方法对应的BeanMethod（含MethodMetadata和其对应的配置类）
-	 */
+
+	//当前"配置类"和接口中含@Bean注解的方法（含MethodMetadata和当前"配置类"）
 	private final Set<BeanMethod> beanMethods = new LinkedHashSet<>();
 
-	/*
-	key：需要导入其他BeanDefinition的配置文件，value：解析该文件中BeanDefinition的BeanDefinitionReader
-	 */
+
+	//当前"配置类"含@ImportResource注解定义的扫描信息（用于后面扫描文件中定义的bean信息，注入BeanFactory）
 	private final Map<String, Class<? extends BeanDefinitionReader>> importedResources =
 			new LinkedHashMap<>();
 
-	/*
-	key：存放ImportBeanDefinitionRegistrar实例，value：存放使用@Import直接或间接导入该实例的类的AnnotationMetadata实例
-	 */
+	//当前"配置类"上@Import注解指定的ImportBeanDefinitionRegistrar实例：
 	private final Map<ImportBeanDefinitionRegistrar, AnnotationMetadata> importBeanDefinitionRegistrars =
 			new LinkedHashMap<>();
 

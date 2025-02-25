@@ -116,7 +116,10 @@ class ConfigurationClassBeanDefinitionReader {
 	private void loadBeanDefinitionsForConfigurationClass(
 			ConfigurationClass configClass, TrackedConditionEvaluator trackedConditionEvaluator) {
 
-		//配置类需要被移除
+		//"配置类"以ConfigurationPhase.REGISTER_BEAN进行@Conditional校验：
+		// 1、若此"配置类"被其他配置类导入（可能有多个）的，且其他所有配置类都@Conditional校验失败，则移除此"配置类"
+		// 2、若此"配置类"直接以ConfigurationPhase.REGISTER_BEAN进行@Conditional校验，失败则移除
+		// ** 移除的话："配置类"的@Import、内部类，@ImportResource、@Bean解析的结果将不再注册到BeanFactory **
 		if (trackedConditionEvaluator.shouldSkip(configClass)) {
 			String beanName = configClass.getBeanName();
 			if (StringUtils.hasLength(beanName) && this.registry.containsBeanDefinition(beanName)) {
@@ -126,20 +129,20 @@ class ConfigurationClassBeanDefinitionReader {
 			return;
 		}
 
-		//该配置类被其他配置类引入，将该配置类转换为BeanDefinition并注入到registry
+		//若此"配置类"被其他配置类引入，则将此配置类注册到BeanFactory
 		if (configClass.isImported()) {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
 
-		//将配置类中带有@Bean注解的方法转换为BeanDefinition并注入到registry
+		//将此"配置类"含@Bean的方法注册到BeanFactory
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}
 
-		//将配置类中@ImportResource注解指定的BeanDefinitionReader解析location指定的文件，并转换为BeanDefinition后注入到registry
+		//将此"配置类"的@ImportResource指定的bean定义文件解析结果注册到BeanFactory
 		loadBeanDefinitionsFromImportedResources(configClass.getImportedResources());
 
-		//将配置中@Import注解引入的ImportBeanDefinitionRegistrar（已实例化），并调用其registerBeanDefinitions方法将特定BeanDefinition注入到registry
+		//此"配置类"的@Import注解引入的ImportBeanDefinitionRegistrar，调用registerBeanDefinitions方法向BeanFactory注入特定bean
 		loadBeanDefinitionsFromRegistrars(configClass.getImportBeanDefinitionRegistrars());
 	}
 
@@ -444,6 +447,8 @@ class ConfigurationClassBeanDefinitionReader {
 		public boolean shouldSkip(ConfigurationClass configClass) {
 			Boolean skip = this.skipped.get(configClass);
 			if (skip == null) {
+				//若configClass是被其他"配置类A"导入，则要校验"配置类A"是否需要跳过？？
+				// 若"配置类A"需跳过，则该configClass
 				if (configClass.isImported()) {
 					boolean allSkipped = true;
 					for (ConfigurationClass importedBy : configClass.getImportedBy()) {
@@ -457,6 +462,7 @@ class ConfigurationClassBeanDefinitionReader {
 						skip = true;
 					}
 				}
+				//校验configClass是否需要跳过？？
 				if (skip == null) {
 					skip = conditionEvaluator.shouldSkip(configClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN);
 				}

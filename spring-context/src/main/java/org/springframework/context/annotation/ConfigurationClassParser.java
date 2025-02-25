@@ -272,9 +272,11 @@ class ConfigurationClassParser {
 			return;
 		}
 
+		//若此"配置类"（configClass）已经曾作为"配置类"被解析过，则不再处理
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
 			if (configClass.isImported()) {
+				//若此"配置类"是其他"配置类A"导入的，将此"配置类A"加入到旧"配置类"的importBy中去
 				if (existingClass.isImported()) {
 					existingClass.mergeImportedBy(configClass);
 				}
@@ -342,7 +344,10 @@ class ConfigurationClassParser {
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
 				//扫描指定路径下的所有class，过滤后转换为BeanDefinition【注册到BeanFactory】后返回：
-				//过滤条件：excludeFilters 返回false & includeFilters 返回true；多数情况是满足含@Component注解即可
+				//过滤条件：
+				//    1、excludeFilters 返回false & includeFilters 要返回true；（多数情况是满足含@Component注解即可）
+				//    2、若类上有@Conditional注解：要验证通过
+				//    3、被扫描类不是此配置类
 				Set<BeanDefinitionHolder> scannedBeanDefinitions =
 						this.componentScanParser.parse(componentScan, sourceClass.getMetadata().getClassName());
 

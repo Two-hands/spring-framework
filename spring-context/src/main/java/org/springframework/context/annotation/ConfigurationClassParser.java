@@ -272,7 +272,12 @@ class ConfigurationClassParser {
 			return;
 		}
 
-		//若此"配置类"（configClass）已经曾作为"配置类"被解析过，则不再处理
+		//若此"配置类"（configClass）已经曾作为"配置类"被解析过，则不再处理：
+		// 如： A类，含内部类A$B
+		//   当通过@ComponenScan方式扫描资源获取，会有2个文件：A.class、A$B.class
+		//     依次把A、A$B当做"配置类"解析：
+		//       1、解析A$B后，configurationClasses中含A$B
+		//       2、解析A，会进而解析其内部类A$B（此时有configClass[A$B].importedBy=A）,同时发现configurationClasses中已含A$B
 		ConfigurationClass existingClass = this.configurationClasses.get(configClass);
 		if (existingClass != null) {
 			if (configClass.isImported()) {
@@ -343,6 +348,7 @@ class ConfigurationClassParser {
 		if (!componentScans.isEmpty() &&
 				!this.conditionEvaluator.shouldSkip(sourceClass.getMetadata(), ConfigurationPhase.REGISTER_BEAN)) {
 			for (AnnotationAttributes componentScan : componentScans) {
+				// ** 注意： 扫描路径上的类时，若一个类含有一个内部类，则会有2个文件（如：A.class，A$B.class；B为A的内部类） **
 				//扫描指定路径下的所有class，过滤后转换为BeanDefinition【注册到BeanFactory】后返回：
 				//过滤条件：
 				//    1、excludeFilters 返回false & includeFilters 要返回true；（多数情况是满足含@Component注解即可）

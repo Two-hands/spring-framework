@@ -134,7 +134,8 @@ class ConfigurationClassBeanDefinitionReader {
 			registerBeanDefinitionForImportedConfigurationClass(configClass);
 		}
 
-		//将此"配置类"含@Bean的方法注册到BeanFactory
+		//将此"配置类"含@Bean的方法过滤后，注册到BeanFactory
+		//过滤条件：将MethodMetadata（含@Bean的方法）以ConfigurationPhase.REGISTER_BEAN进行@Conditional过滤
 		for (BeanMethod beanMethod : configClass.getBeanMethods()) {
 			loadBeanDefinitionsForBeanMethod(beanMethod);
 		}

@@ -733,7 +733,9 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 
 		// BeanFactory interface not registered as resolvable type in a plain factory.
 		// MessageSource registered (and found for autowiring) as a bean.
-		//告诉BeanFactory：Bean含有如下接口属性，直接使用该ApplicationContext作为值进行赋值
+		//定义bean在获取其依赖值时（在解析获取其依赖时直接使用缓存中的配置）：
+		//   1、若依赖值类型为BeanFactory时，直接使用beanFactory作为其值
+		//   2、若依赖值类型为ResourceLoader、ApplicationEventPublisher、ApplicationContext时，直接使用this作为其值
 		beanFactory.registerResolvableDependency(BeanFactory.class, beanFactory);
 		beanFactory.registerResolvableDependency(ResourceLoader.class, this);
 		beanFactory.registerResolvableDependency(ApplicationEventPublisher.class, this);

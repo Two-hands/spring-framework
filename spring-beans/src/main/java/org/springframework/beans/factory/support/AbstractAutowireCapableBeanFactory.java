@@ -1140,12 +1140,12 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 
 		Supplier<?> instanceSupplier = mbd.getInstanceSupplier();
 		if (instanceSupplier != null) {
-			//通过Supplier#get（BeanDefinition.instanceSupplier）获取instance
+			//通过Supplier#get获取instance（BeanDefinition.instanceSupplier）
 			return obtainFromSupplier(instanceSupplier, beanName, mbd);
 		}
 
 		if (mbd.getFactoryMethodName() != null) {
-			//根据BeanDefinition信息找到FactoryBean（任意类型对象），通过FactoryBean获取instance
+			//通过FactoryBean#getObject形式获取实例（BeanDefinition.）
 			return instantiateUsingFactoryMethod(beanName, mbd, args);
 		}
 

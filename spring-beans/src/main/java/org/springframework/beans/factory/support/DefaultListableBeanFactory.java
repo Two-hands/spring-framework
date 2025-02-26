@@ -777,6 +777,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 	}
 
+	/**
+	 * 判断指定beanName是否为自动注入值的候选者？若不是，则该beanName对应的bean不会被当做值注入
+	 * @param beanName 将要被注入的bean的beanName
+	 * @param descriptor 描述
+	 * @return true - 可以当做候选者列入作为被自动注入的值，false - 忽略该值
+	 * @throws NoSuchBeanDefinitionException
+	 */
 	@Override
 	public boolean isAutowireCandidate(String beanName, DependencyDescriptor descriptor)
 			throws NoSuchBeanDefinitionException {
@@ -1445,6 +1452,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 	}
 
+	/**
+	 * 尝试解析bean的依赖：依赖值类型为数组或Map、Collection集合
+	 * @param descriptor 依赖描述：包含目标bean信息（类类型、bean名称...），依赖项信息（字段/参数类型、字段/参数名称...）
+	 * @param beanName 目标bean的名称
+	 * @param autowiredBeanNames 保存注入的依赖bean的名称（一个bean可能依赖多个其他bean）
+	 * @param typeConverter
+	 * @return 数组、集合或null
+	 */
 	@Nullable
 	private Object resolveMultipleBeans(DependencyDescriptor descriptor, @Nullable String beanName,
 			@Nullable Set<String> autowiredBeanNames, @Nullable TypeConverter typeConverter) {
@@ -1465,6 +1480,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return stream;
 		}
 		else if (type.isArray()) {
+			//类型为数组：值为匹配componentType数组元素的所有bean
 			Class<?> componentType = type.getComponentType();
 			ResolvableType resolvableType = descriptor.getResolvableType();
 			Class<?> resolvedArrayType = resolvableType.resolve(type);
@@ -1474,6 +1490,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (componentType == null) {
 				return null;
 			}
+
+			//descriptor转换为MultiElementDescriptor类型，表面根据componentType（元素类型）获取的所有bean必须立即初始化
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, componentType,
 					new MultiElementDescriptor(descriptor));
 			if (matchingBeans.isEmpty()) {
@@ -1493,10 +1511,13 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return result;
 		}
 		else if (Collection.class.isAssignableFrom(type) && type.isInterface()) {
+			//类型为集合（Collection）：值为匹配集合泛型类型的所有bean
 			Class<?> elementType = descriptor.getResolvableType().asCollection().resolveGeneric();
 			if (elementType == null) {
 				return null;
 			}
+
+			//descriptor转换为MultiElementDescriptor类型，表面根据componentType（元素类型）获取的所有bean必须立即初始化
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, elementType,
 					new MultiElementDescriptor(descriptor));
 			if (matchingBeans.isEmpty()) {
@@ -1516,6 +1537,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			return result;
 		}
 		else if (Map.class == type) {
+			//类型为Map：泛型key类型必须为String，泛型value类型为要获取的bean的类型
+			//返回匹配指定类型的所有bean的Map集合[其key值为beanName，value值为匹配valueType的bean]
 			ResolvableType mapType = descriptor.getResolvableType().asMap();
 			Class<?> keyType = mapType.resolveGeneric(0);
 			if (String.class != keyType) {
@@ -1525,6 +1548,8 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			if (valueType == null) {
 				return null;
 			}
+
+			//descriptor转换为MultiElementDescriptor类型，表面根据componentType（元素类型）获取的所有bean必须立即初始化
 			Map<String, Object> matchingBeans = findAutowireCandidates(beanName, valueType,
 					new MultiElementDescriptor(descriptor));
 			if (matchingBeans.isEmpty()) {
@@ -1540,10 +1565,21 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 	}
 
+	/**
+	 * 判断此依赖是否是必须？
+	 * @param descriptor 依赖描述
+	 * @return true - 必须
+	 */
 	private boolean isRequired(DependencyDescriptor descriptor) {
 		return getAutowireCandidateResolver().isRequired(descriptor);
 	}
 
+
+	/**
+	 * 依赖类型是否是多个值（集合）？
+	 * @param type 依赖的类型
+	 * @return true - 多个值（集合）
+	 */
 	private boolean indicatesMultipleBeans(Class<?> type) {
 		return (type.isArray() || (type.isInterface() &&
 				(Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type))));
@@ -1574,6 +1610,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		return new FactoryAwareOrderSourceProvider(instancesToBeanNames);
 	}
 
+	/**
+	 * 尝试从BeanFactory中获取所有符合指定类型（requiredType）和特定条件的bean
+	 */
 	/**
 	 * Find bean instances that match the required type.
 	 * Called during autowiring for the specified bean.

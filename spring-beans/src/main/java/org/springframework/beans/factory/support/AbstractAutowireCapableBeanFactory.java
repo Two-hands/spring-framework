@@ -626,9 +626,11 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Override
 	@Nullable
 	protected Class<?> predictBeanType(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
+		//尝试从BeanDefinition中获取bean类型（解析bean为普通bean还是工厂方法产生的bean...）
 		Class<?> targetType = determineTargetType(beanName, mbd, typesToMatch);
 		// Apply SmartInstantiationAwareBeanPostProcessors to predict the
 		// eventual type after a before-instantiation shortcut.
+		//若类型探测成功，尝试通过SmartInstantiationAwareBeanPostProcessor#predictBeanType探测真正的bean类型（可能是代理对象）
 		if (targetType != null && !mbd.isSynthetic() && hasInstantiationAwareBeanPostProcessors()) {
 			boolean matchingOnlyFactoryBean = (typesToMatch.length == 1 && typesToMatch[0] == FactoryBean.class);
 			for (SmartInstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().smartInstantiationAware) {
@@ -653,11 +655,19 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 	@Nullable
 	protected Class<?> determineTargetType(String beanName, RootBeanDefinition mbd, Class<?>... typesToMatch) {
 		Class<?> targetType = mbd.getTargetType();
+		//BeanDefinition.resolvedTargetType或BeanDefinition.targetType为null（目标类型为null）
 		if (targetType == null) {
+			//尝试解析类型：
 			if (mbd.getFactoryMethodName() != null) {
+				//BeanDefinition.factoryMethodName不为null：
+				//1、若BeanDefinition.factoryMethodReturnType不为null，则其值为bean的类型
+				//2、若1结果为null，且BeanDefinition.factoryMethodToIntrospect（工厂唯一的方法）不为null，则将这个方法的返回值作为bean的类型
+				//3、若1、2结果为null，则直接获取工厂类的所有方法，找到最匹配的方法，则将这个方法的返回值作为bean的类型
+				//4、若1、2、3、结果均为null，则最终结果为null
 				targetType = getTypeForFactoryMethod(beanName, mbd, typesToMatch);
 			}
 			else {
+				//普通bean：直接根据BeanDefinition.beanClass（值为Class或ClassName）的值，若为null则最终结果为null
 				targetType = resolveBeanClass(mbd, beanName, typesToMatch);
 				if (mbd.hasBeanClass()) {
 					targetType = getInstantiationStrategy().getActualBeanClass(mbd, beanName, this);

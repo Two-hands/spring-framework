@@ -82,6 +82,9 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 	/** Config used to configure this proxy. */
 	private final AdvisedSupport advised;
 
+	/**
+	 * 被代理的接口，还额外包含SpringProxy、Advised、DecoratingProxy
+	 */
 	private final Class<?>[] proxiedInterfaces;
 
 	/**
@@ -213,7 +216,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			Object retVal;
 
 			if (this.advised.exposeProxy) {
-				// Make invocation available if necessary.
+				//exposeProxy=true：通过AopContext暴露当前代理对象
 				oldProxy = AopContext.setCurrentProxy(proxy);
 				setProxyContext = true;
 			}
@@ -230,20 +233,25 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			//chain - 增强功能(MethodInterceptor)
 			List<Object> chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
 
-			// Check whether we have any advice. If we don't, we can fall back on direct
-			// reflective invocation of the target, and avoid creating a MethodInvocation.
 			if (chain.isEmpty()) {
 				// We can skip creating a MethodInvocation: just invoke the target directly
 				// Note that the final invoker must be an InvokerInterceptor so we know it does
 				// nothing but a reflective operation on the target, and no hot swapping or fancy proxying.
+				//没有可用的Interceptor(Advice)，直接调用目标对象的指定方法
 				Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
 				retVal = AopUtils.invokeJoinpointUsingReflection(target, method, argsToUse);
 			}
 			else {
-				// We need to create a method invocation...
+				//责任链模式：
+				//有可用的Interceptor(Advice)，创建MethodInvocation执行Interceptor链功能 和 目标方法功能
+				// proxy - 当前代理对象
+				// target - 目标对象
+				// method - 当前需要执行的目标方法
+				// args - 当前需要执行的目标方法的实际参数
+				// targetClass - 目标对象类型
+				// chain - Interceptor链
 				MethodInvocation invocation =
 						new ReflectiveMethodInvocation(proxy, target, method, args, targetClass, chain);
-				// Proceed to the joinpoint through the interceptor chain.
 				retVal = invocation.proceed();
 			}
 
@@ -270,6 +278,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 			}
 			if (setProxyContext) {
 				// Restore old proxy.
+				//有暴露当前代理对象，进行现场还原...
 				AopContext.setCurrentProxy(oldProxy);
 			}
 		}

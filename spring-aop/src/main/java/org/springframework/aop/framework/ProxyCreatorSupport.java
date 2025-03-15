@@ -22,18 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Base class for proxy factories.
- * Provides convenient access to a configurable AopProxyFactory.
  *
- * @author Juergen Hoeller
- * @since 2.0.3
- * @see #createAopProxy()
+ * 持有AopProxyFactory，用于用于创建AopProxy对象，进而创建代理对象
+ * AopProxy可分为JDK和CGLIB两大方向，里面包含了Advised的配置，根据配置中的目标源、接口、Advisors等构建代理对象方法的增强逻辑...
  *
+ * <ul>
+ * 在AopProxy中构建代理对象的执行逻辑：
+ *     <li>JDK的AopProxy会构建InvocationHandle#invoke方法：将Advisors转为Interceptor，尝试构建MethodInvocation执行链完成整个功能增强和目标对象方法的调用</li>
+ *     <li>CGLIB的AopProxy会构建Callback对象，将Advisors转为Interceptor，尝试构建MethodInvocation执行链完成整个功能增强和目标对象方法的调用</li>
+ * </ul>
  *
- * <br/>
- * 持有代理工厂类，用于创建AopProxy代理对象，进而获取Proxy对象
  * 代理工厂的基类：
- *    持有AopProxyFactory用于创建AopPorxy实例（自身作为AopProxyFactory创建代理对象的入参[AdvisedSupport - Advised配置]）
+ *    持有AopProxyFactory用于创建AopProxy实例（自身作为AopProxyFactory创建代理对象的入参[AdvisedSupport - Advised配置]）
  *    并且提供一个机会在第一个AopProxy实例创建前修改Advised配置（模式：观察者模式）
  *
  *    AopProxyFactory通常是DefaultAopProxyFactory类型，提供JDK和CGLIB方式创建代理对象
@@ -41,6 +41,9 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class ProxyCreatorSupport extends AdvisedSupport {
 
+	/**
+	 * 根据Advised配置生成AopProxy对象（JDK、CGLIB）
+	 */
 	private AopProxyFactory aopProxyFactory;
 
 	private final List<AdvisedSupportListener> listeners = new ArrayList<>();
@@ -103,9 +106,10 @@ public class ProxyCreatorSupport extends AdvisedSupport {
 	}
 
 
+
 	/**
-	 * Subclasses should call this to get a new AOP proxy. They should <b>not</b>
-	 * create an AOP proxy with {@code this} as an argument.
+	 * 子类可以通过调用此方法获取一个新的AopProxy对象，创建时传入AdvisedSupport - 当前对象就是此类型
+	 * @return AopProxy对象
 	 */
 	protected final synchronized AopProxy createAopProxy() {
 		if (!this.active) {

@@ -70,13 +70,9 @@ public interface MethodMatcher {
 	boolean matches(Method method, Class<?> targetClass);
 
 	/**
-	 * Is this {@code MethodMatcher} dynamic, that is, must a final check be made
-	 * via the {@link #matches(Method, Class, Object[])} method at runtime even
-	 * if {@link #matches(Method, Class)} returns {@code true}?
-	 * <p>Can be invoked when an AOP proxy is created, and need not be invoked
-	 * again before each method invocation.
-	 * @return whether a runtime match via {@link #matches(Method, Class, Object[])}
-	 * is required if static matching passed
+	 * 当前的MethodMatcher是动态匹配？若是动态，必须在调用执行前获取实时的目标对象再调用{@code matches}方法
+	 * 检测是否匹配，若匹配才能执行，否则不能执行；若不是动态，则在代理创建前就应该校验完成....
+	 * @return true - 需要运行时匹配
 	 */
 	boolean isRuntime();
 

@@ -156,7 +156,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	private boolean abstractFlag = false;
 
 	/*
-	 bean是否要延迟初始化
+	 bean是否要延迟初始化：
+	    true - 如：在ApplicationContext刷新时会调用BeanFactory#preInstantiateSingletons不会实例化lazyInit=true的bean
 	 */
 	@Nullable
 	private Boolean lazyInit;

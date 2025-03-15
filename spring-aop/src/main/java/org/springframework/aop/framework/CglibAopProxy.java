@@ -288,7 +288,8 @@ class CglibAopProxy implements AopProxy, Serializable {
 		boolean isFrozen = this.advised.isFrozen();
 		boolean exposeProxy = this.advised.isExposeProxy();
 
-		// Choose an "aop" interceptor (used for AOP calls).
+		// 创建一个DynamicAdvisedInterceptor（MethodInterceptor对象），作为代理对象执行的第一个Interceptor，
+		//在这个对象的intercept方法中定义创建CglibMethodInvocation进行链式执行增强功能、目标方法功能。
 		Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
 
 		// Choose a "straight to target" interceptor. (used for calls that are
@@ -690,7 +691,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 					// method - 目标方法
 					// args -   目标方法参数值
 					// targetClass - 目标对象类型
-					// chain  - 增强链（Advice数组）
+					// chain  - 增强链（Advice衍生的Interceptor数组）
 					// methodProxy - 附加信息（暂时没用）
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}

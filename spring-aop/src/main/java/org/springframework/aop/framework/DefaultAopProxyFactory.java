@@ -16,11 +16,11 @@
 
 package org.springframework.aop.framework;
 
-import java.io.Serializable;
-import java.lang.reflect.Proxy;
-
 import org.springframework.aop.SpringProxy;
 import org.springframework.util.ClassUtils;
+
+import java.io.Serializable;
+import java.lang.reflect.Proxy;
 
 /**
  * Default {@link AopProxyFactory} implementation, creating either a CGLIB proxy
@@ -59,12 +59,17 @@ public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 
 	@Override
 	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+		// config.isOptimize() - true时无需感知Advised后续的配置变化
+		// config.isProxyTargetClass() - 直接代理目标类
+		// hasNoUserSuppliedProxyInterfaces(config) - 被增强代理的接口只有一个，并且是SpringProxy类型...
 		if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
 			Class<?> targetClass = config.getTargetClass();
 			if (targetClass == null) {
 				throw new AopConfigException("TargetSource cannot determine target class: " +
 						"Either an interface or a target is required for proxy creation.");
 			}
+			//targetClass.isInterface() - 目标类是接口
+			//Proxy.isProxyClass(targetClass) - 当前targetClass是Proxy生成的代理类
 			if (targetClass.isInterface() || Proxy.isProxyClass(targetClass) || ClassUtils.isLambdaClass(targetClass)) {
 				return new JdkDynamicAopProxy(config);
 			}

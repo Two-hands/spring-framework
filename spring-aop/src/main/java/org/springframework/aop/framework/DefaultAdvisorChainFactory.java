@@ -49,12 +49,14 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 	public static final DefaultAdvisorChainFactory INSTANCE = new DefaultAdvisorChainFactory();
 
 
+	/**
+	 * 根据给定的目标类型、目标方法从Advised获取可应用的Advisors，并将其转换为Interceptor数组返回
+	 */
 	@Override
 	public List<Object> getInterceptorsAndDynamicInterceptionAdvice(
 			Advised config, Method method, @Nullable Class<?> targetClass) {
 
-		// This is somewhat tricky... We have to process introductions first,
-		// but we need to preserve order in the ultimate list.
+
 		//Advisor适配中心（模式：适配+策略）
 		AdvisorAdapterRegistry registry = GlobalAdvisorAdapterRegistry.getInstance();
 		Advisor[] advisors = config.getAdvisors();
@@ -65,12 +67,17 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 		//遍历Advised中所有Advisors，通过条件匹配组织好Advisor中的Advice（直接或间接转换为MethodInterceptor）集合返回
 		for (Advisor advisor : advisors) {
 			if (advisor instanceof PointcutAdvisor pointcutAdvisor) {
-				// Add it conditionally.
+				//PointcutAdvisor类型：
+				//  1、当前Advisor可以应用到目标类
+				//  2、在目标类匹配成功后，继续判断当前Advisor是否可以应用到具体指定方法
 				if (config.isPreFiltered() || pointcutAdvisor.getPointcut().getClassFilter().matches(actualClass)) {
+					// MethodMatcher - 方法匹配器，用于确定给定方法是否与目标方法匹配...
 					MethodMatcher mm = pointcutAdvisor.getPointcut().getMethodMatcher();
 					boolean match;
 					if (mm instanceof IntroductionAwareMethodMatcher iamm) {
 						if (hasIntroductions == null) {
+							//advisors中是否至少有一个advisor是IntroductionAdvisor类型，并且这个advisor能够应用到当前类上
+							// 若上述满足 hasIntroductions = true,否则为false
 							hasIntroductions = hasMatchingIntroductions(advisors, actualClass);
 						}
 						match = iamm.matches(method, actualClass, hasIntroductions);
@@ -78,11 +85,19 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 					else {
 						match = mm.matches(method, actualClass);
 					}
+
+
 					if (match) {
+						//当前Advisor可以应用到当前类（actualClass）的具体指定方法（method），将Advisor转换为MethodInterceptor
+						//   Advisor中含Advice（其大多数情况就是MethodInterceptor，只有少数情况会是
+						//      1、AfterReturningAdvice
+						//      2、MethodBeforeAdvice
+						//      3、SimpleBeforeAdvice
+						//      4、ThrowsAdvice
+						//以上4中情况下会用适配器模式将其转换为MethodInterceptor
 						MethodInterceptor[] interceptors = registry.getInterceptors(advisor);
 						if (mm.isRuntime()) {
-							// Creating a new object instance in the getInterceptors() method
-							// isn't a problem as we normally cache created chains.
+							// 在运行时进行目标方法的匹配：创建InterceptorAndDynamicMethodMatcher对象包装与MethodMatcher
 							for (MethodInterceptor interceptor : interceptors) {
 								interceptorList.add(new InterceptorAndDynamicMethodMatcher(interceptor, mm));
 							}
@@ -92,14 +107,18 @@ public class DefaultAdvisorChainFactory implements AdvisorChainFactory, Serializ
 						}
 					}
 				}
+
 			}
 			else if (advisor instanceof IntroductionAdvisor ia) {
+				//advisor是IntroductionAdvisor类型：
+				// 只要类匹配即可
 				if (config.isPreFiltered() || ia.getClassFilter().matches(actualClass)) {
 					Interceptor[] interceptors = registry.getInterceptors(advisor);
 					interceptorList.addAll(Arrays.asList(interceptors));
 				}
 			}
 			else {
+				//其他类型：
 				Interceptor[] interceptors = registry.getInterceptors(advisor);
 				interceptorList.addAll(Arrays.asList(interceptors));
 			}

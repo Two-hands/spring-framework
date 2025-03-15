@@ -21,17 +21,7 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.lang.Nullable;
 
 /**
- * Extension of the AOP Alliance {@link org.aopalliance.intercept.MethodInvocation}
- * interface, allowing access to the proxy that the method invocation was made through.
- *
- * <p>Useful to be able to substitute return values with the proxy,
- * if necessary, for example if the invocation target returned itself.
- *
- * @author Juergen Hoeller
- * @author Adrian Colyer
- * @since 1.1.3
- * @see org.springframework.aop.framework.ReflectiveMethodInvocation
- * @see org.springframework.aop.support.DelegatingIntroductionInterceptor
+ * 对MethodInvocation的扩展，允许通过MethodInvocation获取代理对象，克隆当前MethodInvocation，设置用户自定义附加属性...
  */
 public interface ProxyMethodInvocation extends MethodInvocation {
 

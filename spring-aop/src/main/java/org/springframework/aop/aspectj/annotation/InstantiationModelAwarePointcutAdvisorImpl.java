@@ -16,14 +16,8 @@
 
 package org.springframework.aop.aspectj.annotation;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
-import java.lang.reflect.Method;
-
 import org.aopalliance.aop.Advice;
 import org.aspectj.lang.reflect.PerClauseKind;
-
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.aspectj.AspectJExpressionPointcut;
 import org.springframework.aop.aspectj.AspectJPrecedenceInformation;
@@ -33,6 +27,11 @@ import org.springframework.aop.support.DynamicMethodMatcherPointcut;
 import org.springframework.aop.support.Pointcuts;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
  * Internal implementation of AspectJPointcutAdvisor.
@@ -51,18 +50,25 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 	private static final Advice EMPTY_ADVICE = new Advice() {};
 
 
+	//根据方法上的AspectJ注解生成的Pointcut对象
 	private final AspectJExpressionPointcut declaredPointcut;
 
+	//切面类
 	private final Class<?> declaringClass;
 
+	//切面类中具体被AspectJ注解标注的方法的方法名称
 	private final String methodName;
 
+	//切面类中具体被AspectJ注解标注的方法的方法参数类型
 	private final Class<?>[] parameterTypes;
 
+	//切面类中具体被AspectJ注解标注的方法
 	private transient Method aspectJAdviceMethod;
 
+	//根据切面类及其方法上的AspectJ注解生成对应PointcutAdvisor对象的工厂
 	private final AspectJAdvisorFactory aspectJAdvisorFactory;
 
+	//获取切面类实例的工厂
 	private final MetadataAwareAspectInstanceFactory aspectInstanceFactory;
 
 	private final int declarationOrder;
@@ -73,12 +79,15 @@ final class InstantiationModelAwarePointcutAdvisorImpl
 
 	private final boolean lazy;
 
+	//切面类对象
 	@Nullable
 	private Advice instantiatedAdvice;
 
+	//是否是前置通知？
 	@Nullable
 	private Boolean isBeforeAdvice;
 
+	//是否是后置通知？
 	@Nullable
 	private Boolean isAfterAdvice;
 

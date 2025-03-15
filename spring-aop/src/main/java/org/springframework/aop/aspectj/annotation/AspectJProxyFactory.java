@@ -31,27 +31,25 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * AspectJ-based proxy factory, allowing for programmatic building
- * of proxies which include AspectJ aspects (code style as well
- * annotation style).
- *
- * @author Rob Harrop
- * @author Juergen Hoeller
- * @author Ramnivas Laddad
- * @since 2.0
- * @see #addAspect(Object)
- * @see #addAspect(Class)
- * @see #getProxy()
- * @see #getProxy(ClassLoader)
- * @see org.springframework.aop.framework.ProxyFactory
+ * <pre>
+ * 创建基于AspectJ风格的AOP代理对象：
+ *   对添加切面类（含@Aspect注解）进行解析，构造出Advisors，并添加到advisors中
+ *   <b>注意</b>：Advisors中含AspectJ风格的Advisor，必须在首位置添加一个ExposeInvocationInterceptor.ADVISOR（含Advice：ExposeInvocationInterceptor）用于在整个Interceptor执行过程中暴露MethodInvocation
  *
  *
- * <br/>
- * 创建基于AspectJ风格的AOP代理对象
- * ProxyFactoryBean、AspectJProxyFactory与ProxyFactory区别
- *     ProxyFactory：虽然可以与AspectJ一起使用，但需要手动将AspectJ的切面定义转译为Advisor或Advice定义；【功能直接、简洁，需要手动配置Advisor】
- *     AspectJProxyFactory：直接支持AspectJ风格的切面定义（支持将Aspect实例转换为Advisor）；【支持Aspect切面功能】
- *     ProxyFactoryBean：需要的Advisor、Advice实例从BeanFactory中获取；【支持通过BeanFactory灵活配置Advicor】
+ * 切面类构造PointcutAdvisor：
+ *   - Pointcut - 主体由切面类方法上的@AspectJ风格注解决定
+ *   - Advice - 主体由切面类含@AspectJ风格注解的方法来充当（被包装为Advice）
+ *
+ *
+ *
+ * <ul>
+ * ProxyFactoryBean、AspectJProxyFactory与ProxyFactory区别：
+ *   <li>1、ProxyFactory：虽然可以与AspectJ一起使用，但需要手动将AspectJ的切面定义转译为Advisor或Advice定义；【功能直接、简洁，需要手动配置Advisor】</li>
+ *   <li>2、AspectJProxyFactory：直接支持AspectJ风格的切面定义（支持将Aspect实例转换为Advisor）；【支持Aspect切面功能】</li>
+ *   <li>3、ProxyFactoryBean：需要的Advisor、Advice实例从BeanFactory中获取；【支持通过BeanFactory灵活配置Advisor】</li>
+ * </ul>
+ * </pre>
  */
 @SuppressWarnings("serial")
 public class AspectJProxyFactory extends ProxyCreatorSupport {
@@ -59,6 +57,7 @@ public class AspectJProxyFactory extends ProxyCreatorSupport {
 	/** Cache for singleton aspect instances. */
 	private static final Map<Class<?>, Object> aspectCache = new ConcurrentHashMap<>();
 
+	//AspectJ风格的Advisor创建工厂，根据切面类（含@Aspect注解）构建PointcutAdvisor（含Advice、Pointcut）
 	private final AspectJAdvisorFactory aspectFactory = new ReflectiveAspectJAdvisorFactory();
 
 
@@ -125,10 +124,16 @@ public class AspectJProxyFactory extends ProxyCreatorSupport {
 	 * @see AspectJProxyUtils#makeAdvisorChainAspectJCapableIfNecessary(List)
 	 */
 	private void addAdvisorsFromAspectInstanceFactory(MetadataAwareAspectInstanceFactory instanceFactory) {
+		//根据切面类构建PointcutAdvisor
 		List<Advisor> advisors = this.aspectFactory.getAdvisors(instanceFactory);
 		Class<?> targetClass = getTargetClass();
 		Assert.state(targetClass != null, "Unresolvable target class");
+		// 判断Advisor是否可以应用到targetClass类及其方法上，不符合条件的将被过滤掉
 		advisors = AopUtils.findAdvisorsThatCanApply(advisors, targetClass);
+
+		//若Advisors中含有AspectJ风格的Advisor，需要在Advisor数组首位添加一个ExposeInvocationInterceptor.ADVISOR（不存在的话）
+		//ExposeInvocationInterceptor.ADVISOR含ExposeInvocationInterceptor（Advice），其作用是可以在整个Interceptor链执行
+		//过程中暴露MethodInvocation对象...
 		AspectJProxyUtils.makeAdvisorChainAspectJCapableIfNecessary(advisors);
 		AnnotationAwareOrderComparator.sort(advisors);
 		addAdvisors(advisors);

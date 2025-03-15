@@ -21,15 +21,9 @@ import org.springframework.util.Assert;
 import java.io.Serializable;
 
 /**
- * Convenience superclass for configuration used in creating proxies,
- * to ensure that all proxy creators have consistent properties.
- *
- * @author Rod Johnson
- * @author Juergen Hoeller
- * @see AdvisedSupport
- *
- * <br/>
- * 代理配置操作：定义了一些代理工厂配置的可配置属性
+ * <pre>
+ *    创建代理所需的配置
+ * </pre>
  */
 public class ProxyConfig implements Serializable {
 
@@ -43,7 +37,9 @@ public class ProxyConfig implements Serializable {
 	private boolean proxyTargetClass = false;
 
 	/*
-	优化？？？
+	 当代理对象被创建后，Advised相关配置发生变化后，是否要同步这些变化的配置给对应的目标对象？
+	  true - 代理对象忽略在此创建后Advised发生的配置变化
+	  false - 配置变化需要被感知
 	 */
 	private boolean optimize = false;
 

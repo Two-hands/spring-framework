@@ -23,104 +23,70 @@ import org.springframework.aop.TargetClassAware;
 import org.springframework.aop.TargetSource;
 
 /**
- * Interface to be implemented by classes that hold the configuration
- * of a factory of AOP proxies. This configuration includes the
- * Interceptors and other advice, Advisors, and the proxied interfaces.
  *
- * <p>Any AOP proxy obtained from Spring can be cast to this interface to
- * allow manipulation of its AOP advice.
+ * <pre>
+ *    实现此接口的类将拥有"操作和管理"AOP工厂代理配置。
+ *    如果向Advised中添加Advice，最终会转换为Advisor（如：DefaultIntroductionAdvisor、DefaultPointcutAdvisor...）进行保。
  *
- * @author Rod Johnson
- * @author Juergen Hoeller
- * @since 13.03.2003
- * @see org.springframework.aop.framework.AdvisedSupport
- *
- *
- * <br/>
- * 实现此接口的类将拥有"操作和管理"AOP工厂代理配置，包括：拦截器（interceptors）、通知（advice）、代理接口（interfaces - 被增强的接口）
- * 从Spring中获取的所有OP代理都可以被强制转换成Advised类型进行操作：
- *    1、是否
- *    2、获取目标对象和类型（功能继承自TargetClassAware）
- *    3、操作和管理Advisor、Advice
- *
- *  ** 如果向Advised中添加Adivice，最终会转换为Advisor（如：DefaultIntroductionAdvisor、DefaultPointcutAdvisor...）进行保存**
- *
+ * 说明：
  * Advice（通知）：表示在特定的连接点（join point）上采取的操作
  * Advisor（通知者）：Advisor充当Advice和Pointcut的适配器（Advisor持有Advice‌）
  * Advised（配置）：提供了操作和管理Advice和Advisor的能力
+ * </pre>
  */
 public interface Advised extends TargetClassAware {
 
 	/**
-	 * Return whether the Advised configuration is frozen,
-	 * in which case no advice changes can be made.
-	 *
-	 * <br/>
-	 * 冻结配置？ true - 配置被冻结，无法再添加或移除Advisor
+	 * Advised配置是否被冻结？
+	 * @return true - 冻结，此时无法再对Advice做改变
 	 */
 	boolean isFrozen();
 
+
 	/**
-	 * Are we proxying the full target class instead of specified interfaces?
-	 *
-	 * <br/>
-	 * 直接代理目标类？true - 不会代理接口，通常使用CGLIB方式代理
+	 * 直接代理目标类，而不是接口？
+	 * @return true - 直接代理目标类
 	 */
 	boolean isProxyTargetClass();
 
+
 	/**
-	 * Return the interfaces proxied by the AOP proxy.
-	 * <p>Will not include the target class, which may also be proxied.
+	 * 获取被AOP代理（增强）的所有接口
+	 * @return 返回已经被代理增强的所有接口
 	 */
 	Class<?>[] getProxiedInterfaces();
 
+
 	/**
-	 * Determine whether the given interface is proxied.
-	 * @param intf the interface to check
-	 *
-	 * <br/>
-	 * 是否有代理某个具体的接口？ true - 代理了具体的"intf"接口
+	 * 检测给定接口是否被代理（增强）
+	 * @param intf  被检测的接口
+	 * @return true - intf已经被代理（增强）
 	 */
 	boolean isInterfaceProxied(Class<?> intf);
 
+
 	/**
-	 * Change the {@code TargetSource} used by this {@code Advised} object.
-	 * <p>Only works if the configuration isn't {@linkplain #isFrozen frozen}.
-	 * @param targetSource new TargetSource to use
+	 * 设置被代理目标源（可能是目标对象或目标接口），当且仅当frozen=false时才能进行设置
+	 * @param targetSource 被代理目标对象
 	 */
 	void setTargetSource(TargetSource targetSource);
 
+
 	/**
-	 * Return the {@code TargetSource} used by this {@code Advised} object.
-	 *
-	 * <br/>
-	 * 获取目标对象
+	 * 获取被代理目标源
 	 */
 	TargetSource getTargetSource();
 
 	/**
-	 * Set whether the proxy should be exposed by the AOP framework as a
-	 * {@link ThreadLocal} for retrieval via the {@link AopContext} class.
-	 * <p>It can be necessary to expose the proxy if an advised object needs
-	 * to invoke a method on itself with advice applied. Otherwise, if an
-	 * advised object invokes a method on {@code this}, no advice will be applied.
-	 * <p>Default is {@code false}, for optimal performance.
-	 *
-	 * <br/>
-	 * 设置是否需要保留代理对象
+	 * 设置AOP框架是否应该将[代理对象]通过AopContext中的ThreadLocal进行暴露
+	 *    如：可以在目标对象方法中获取"目标对象的代理对象"
+	 * @param exposeProxy 暴露代理对象？ true - 可以根据AopContext#currentProxy方法在被代理对象自身方法中获取其代理对象引用
 	 */
 	void setExposeProxy(boolean exposeProxy);
 
 	/**
-	 * Return whether the factory should expose the proxy as a {@link ThreadLocal}.
-	 * <p>It can be necessary to expose the proxy if an advised object needs
-	 * to invoke a method on itself with advice applied. Otherwise, if an
-	 * advised object invokes a method on {@code this}, no advice will be applied.
-	 * <p>Getting the proxy is analogous to an EJB calling {@code getEJBObject()}.
-	 * @see AopContext
-	 *
-	 * <br/>
-	 * 暴露代理对象？ true - 暴露代理对象
+	 * AOP框架是否应该将[代理对象]通过AopContext中的ThreadLocal进行暴露？
+	 * @return true - 可以根据AopContext#currentProxy方法在被代理对象自身方法中获取其代理对象引用
 	 */
 	boolean isExposeProxy();
 
@@ -141,119 +107,88 @@ public interface Advised extends TargetClassAware {
 	boolean isPreFiltered();
 
 	/**
-	 * Return the advisors applying to this proxy.
-	 * @return a list of Advisors applying to this proxy (never {@code null})
+	 * 返回代理对象中所有起增强作用的advisors
+	 * @return 代理对象中起增强作用的所有advisors
 	 */
 	Advisor[] getAdvisors();
 
 	/**
-	 * Return the number of advisors applying to this proxy.
-	 * <p>The default implementation delegates to {@code getAdvisors().length}.
-	 * @since 5.3.1
+	 * 返回代理对象中起增强作用的advisors的数量
+	 * @return 起作用的advisors数量
 	 */
 	default int getAdvisorCount() {
 		return getAdvisors().length;
 	}
 
+
 	/**
-	 * Add an advisor at the end of the advisor chain.
-	 * <p>The Advisor may be an {@link org.springframework.aop.IntroductionAdvisor},
-	 * in which new interfaces will be available when a proxy is next obtained
-	 * from the relevant factory.
-	 * @param advisor the advisor to add to the end of the chain
-	 * @throws AopConfigException in case of invalid advice
+	 * 向advisors链末尾新增一个advisor
 	 */
 	void addAdvisor(Advisor advisor) throws AopConfigException;
 
 	/**
-	 * Add an Advisor at the specified position in the chain.
-	 * @param advisor the advisor to add at the specified position in the chain
-	 * @param pos position in chain (0 is head). Must be valid.
-	 * @throws AopConfigException in case of invalid advice
+	 * 向advisors链的指定位置添加一个advisor
+	 * @param pos 放置的位置
+	 * @param advisor 新增的advisor
 	 */
 	void addAdvisor(int pos, Advisor advisor) throws AopConfigException;
 
 	/**
-	 * Remove the given advisor.
-	 * @param advisor the advisor to remove
-	 * @return {@code true} if the advisor was removed; {@code false}
-	 * if the advisor was not found and hence could not be removed
+	 * 从advisors链中移除指定的advisor
+	 * @param advisor 要被移除的advisor
+	 * @return 是否移除成功？true - 移除成功 false - 未找到
 	 */
 	boolean removeAdvisor(Advisor advisor);
 
+
 	/**
-	 * Remove the advisor at the given index.
-	 * @param index the index of advisor to remove
-	 * @throws AopConfigException if the index is invalid
+	 * 从advisors链中移除指定位置的advisor
+	 * @param index 要被移除的advisor的位置
 	 */
 	void removeAdvisor(int index) throws AopConfigException;
 
+
 	/**
-	 * Return the index (from 0) of the given advisor,
-	 * or -1 if no such advisor applies to this proxy.
-	 * <p>The return value of this method can be used to index into the advisors array.
-	 * @param advisor the advisor to search for
-	 * @return index from 0 of this advisor, or -1 if there's no such advisor
+	 * 返回指定的advisor在advisors链中的位置
+	 * @param advisor 要被定位的advisor
+	 * @return 指定advisor的位置，-1表示未找到
 	 */
 	int indexOf(Advisor advisor);
 
 	/**
-	 * Replace the given advisor.
-	 * <p><b>Note:</b> If the advisor is an {@link org.springframework.aop.IntroductionAdvisor}
-	 * and the replacement is not or implements different interfaces, the proxy will need
-	 * to be re-obtained or the old interfaces won't be supported and the new interface
-	 * won't be implemented.
-	 * @param a the advisor to replace
-	 * @param b the advisor to replace it with
-	 * @return whether it was replaced. If the advisor wasn't found in the
-	 * list of advisors, this method returns {@code false} and does nothing.
-	 * @throws AopConfigException in case of invalid advice
+	 * 使用Advisor b 替换掉advisors链中的 Advisor a，注意：当Advisor是IntroductionAdvisor时，代理功能需要按照新的Advisor而取消旧的Advisor
+	 * @param a 旧Advisor
+	 * @param b 新Advisor
+	 * @return true - 替换成功，false - 旧Advisor未找到，无法替换
 	 */
 	boolean replaceAdvisor(Advisor a, Advisor b) throws AopConfigException;
 
 	/**
-	 * Add the given AOP Alliance advice to the tail of the advice (interceptor) chain.
-	 * <p>This will be wrapped in a DefaultPointcutAdvisor with a pointcut that always
-	 * applies, and returned from the {@code getAdvisors()} method in this wrapped form.
-	 * <p>Note that the given advice will apply to all invocations on the proxy,
-	 * even to the {@code toString()} method! Use appropriate advice implementations
-	 * or specify appropriate pointcuts to apply to a narrower set of methods.
-	 * @param advice the advice to add to the tail of the chain
-	 * @throws AopConfigException in case of invalid advice
-	 * @see #addAdvice(int, Advice)
-	 * @see org.springframework.aop.support.DefaultPointcutAdvisor
+	 * 向advisors链末尾添加一个新的advice（需要被包装为DefaultPointcutAdvisor - 其pointcut默认都起作用）
+	 * @param advice 新增的advice
 	 */
 	void addAdvice(Advice advice) throws AopConfigException;
 
+
 	/**
-	 * Add the given AOP Alliance Advice at the specified position in the advice chain.
-	 * <p>This will be wrapped in a {@link org.springframework.aop.support.DefaultPointcutAdvisor}
-	 * with a pointcut that always applies, and returned from the {@link #getAdvisors()}
-	 * method in this wrapped form.
-	 * <p>Note: The given advice will apply to all invocations on the proxy,
-	 * even to the {@code toString()} method! Use appropriate advice implementations
-	 * or specify appropriate pointcuts to apply to a narrower set of methods.
-	 * @param pos index from 0 (head)
-	 * @param advice the advice to add at the specified position in the advice chain
-	 * @throws AopConfigException in case of invalid advice
+	 * 向advisors链中的指定位置添加一个advice（需要被包装为DefaultPointcutAdvisor）
+	 * @param pos 添加的位置
+	 * @param advice 新增的advice
 	 */
 	void addAdvice(int pos, Advice advice) throws AopConfigException;
 
 	/**
-	 * Remove the Advisor containing the given advice.
-	 * @param advice the advice to remove
-	 * @return {@code true} of the advice was found and removed;
-	 * {@code false} if there was no such advice
+	 * 从advisors链中移除指定的advice（因为Advisor中含advice，可以通过比对找到）
+	 * @param advice 含此advice的advisor将从advisors链中移除
+	 * @return true - 移除成功，false - 未找到
 	 */
 	boolean removeAdvice(Advice advice);
 
+
 	/**
-	 * Return the index (from 0) of the given AOP Alliance Advice,
-	 * or -1 if no such advice is an advice for this proxy.
-	 * <p>The return value of this method can be used to index into
-	 * the advisors array.
-	 * @param advice the AOP Alliance advice to search for
-	 * @return index from 0 of this advice, or -1 if there's no such advice
+	 * 返回指定advice（因为Advisor中含advice，可以通过比对找到）在advisors链中的位置
+	 * @param advice 指定的advice
+	 * @return 含此advice的advisor在advisors链中的位置，-1为未找到
 	 */
 	int indexOf(Advice advice);
 

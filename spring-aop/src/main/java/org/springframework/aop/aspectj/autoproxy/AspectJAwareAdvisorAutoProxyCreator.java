@@ -33,16 +33,6 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * {@link org.springframework.aop.framework.autoproxy.AbstractAdvisorAutoProxyCreator}
- * subclass that exposes AspectJ's invocation context and understands AspectJ's rules
- * for advice precedence when multiple pieces of advice come from the same aspect.
- *
- * @author Adrian Colyer
- * @author Juergen Hoeller
- * @author Ramnivas Laddad
- * @since 2.0
- *
- * <br/>
  * 主要扩展了对AspectJ切面的识别：在Advisor集合的首位添加了一个含ExposeInvocationInterceptor的Advisor
  * 每个执行线程通过ExposeInvocationInterceptor将MethodInvocation保存到各自线程的ThreadLocalMap中
  * 便于在AspectJ框架衍生的Advice执行过程中获取MethodInvocation（ProxyMethodInvocation类型）

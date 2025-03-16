@@ -126,7 +126,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 */
 	private boolean freezeProxy = false;
 
-	/** Default is no common interceptors. */
+	//通用Interceptor的名称，每个要代理的对象都要添加这些Advisor
 	private String[] interceptorNames = new String[0];
 
 	private boolean applyCommonInterceptorsFirst = true;
@@ -247,9 +247,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			else {
 				targetSource = EmptyTargetSource.forClass(beanClass);
 			}
-			//获取能够应用到bean的Advisor
+			//getAdvicesAndAdvisorsForBean - 获取当前bean可用的Advisor和Advice（当前方法由子类实现）
 			Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(beanClass, beanName, targetSource);
 			if (specificInterceptors != DO_NOT_PROXY) {
+				//specificInterceptors数组不为空，需要被代理
 				this.advisedBeans.put(cacheKey, Boolean.TRUE);
 				proxyType = createProxyClass(beanClass, beanName, specificInterceptors, targetSource);
 				this.proxyTypes.put(cacheKey, proxyType);
@@ -376,8 +377,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			return bean;
 		}
 
-		// Create proxy if we have advice.
-		//获取能够应用到bean的Advisor
+		//获取能够应用到bean的Advisor、Advice
 		Object[] specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, null);
 		if (specificInterceptors != DO_NOT_PROXY) {
 			this.advisedBeans.put(cacheKey, Boolean.TRUE);
@@ -579,7 +579,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @return the list of Advisors for the given bean
 	 */
 	protected Advisor[] buildAdvisors(@Nullable String beanName, @Nullable Object[] specificInterceptors) {
-		// Handle prototypes correctly...
+		// 根据名称从beanFactory中获取bean，包装为Advisor
 		Advisor[] commonInterceptors = resolveInterceptorNames();
 
 		List<Object> allInterceptors = new ArrayList<>();

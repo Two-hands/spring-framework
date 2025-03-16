@@ -28,13 +28,8 @@ import org.springframework.util.ObjectUtils;
 import java.io.Closeable;
 
 /**
- * Base class with common functionality for proxy processors, in particular
- * ClassLoader management and the {@link #evaluateProxyInterfaces} algorithm.
- *
- * @author Juergen Hoeller
- * @since 4.1
- * @see AbstractAdvisingBeanPostProcessor
- * @see org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator
+ * 具有代理处理器通用功能的基类，特别是ClassLoader管理和evaluateProxyInterfaces算法。
+ * {@code evaluateProxyInterfaces}方法获取目标对象合理的接口添加到ProxyFactory中（使用JDK代理），如果没有接口则设置ProxyFactory.proxyTargetClass=true（使用CGLIB代理）
  */
 @SuppressWarnings("serial")
 public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanClassLoaderAware, AopInfrastructureBean {
@@ -94,17 +89,11 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 
 
 	/**
-	 * Check the interfaces on the given bean class and apply them to the {@link ProxyFactory},
-	 * if appropriate.
-	 * <p>Calls {@link #isConfigurationCallbackInterface} and {@link #isInternalLanguageInterface}
-	 * to filter for reasonable proxy interfaces, falling back to a target-class proxy otherwise.
-	 * @param beanClass the class of the bean
-	 * @param proxyFactory the ProxyFactory for the bean
-	 *
- 	 *  <br/>
+	 * <pre>
 	 *  判断代理素材：
-	 *   1、如果beanClass存在接口，获取所有满足条件的接口，添加到proxyFactory#addInterface
+	 *   1、如果beanClass存在接口，获取所有满足条件的接口，添加到ProxyFactory#addInterface
 	 *   2、如果beanClass存在接口且所有接口不满足条件，或不存在接口则设置proxyFactory#setProxyTargetClass（直接代理目标对象）
+	 * </pre>
 	 */
 	protected void evaluateProxyInterfaces(Class<?> beanClass, ProxyFactory proxyFactory) {
 		//获取beanClass的所有接口

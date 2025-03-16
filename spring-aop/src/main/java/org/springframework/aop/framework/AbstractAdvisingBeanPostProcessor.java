@@ -64,35 +64,33 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 
 
 	/**
-	 * 如果beanClass满足advisor增强条件，则创建beanClass的代理类返回
-	 * @param beanClass the raw class of the bean  目标对象
-	 * @param beanName the name of the bean Bean名称
-	 * @return 新的代理类Class对象或原有beanClass（目标对象）
+	 * 判断当前给定beanClass是否需要代理？需要代理则返回代理对象类型，否则返回原类型
 	 */
 	@Override
 	public Class<?> determineBeanType(Class<?> beanClass, String beanName) {
 		if (this.advisor != null && isEligible(beanClass)) {
-			//满足条件，使用advisor创建代理工厂
+			//advisor可以应用到当前beanClass，需要代理，创建ProxyFactory生成代理对象类型
 			ProxyFactory proxyFactory = new ProxyFactory();
 			proxyFactory.copyFrom(this);
 			proxyFactory.setTargetClass(beanClass);
 
 			if (!proxyFactory.isProxyTargetClass()) {
-				//设置advised的interfaces或proxyTargetClass属性
+				//未指定ProxyFactory.proxyTargetClass（默认为false），尝试根据目标对象判断：
+				// 1、含有合理的接口，使用JDK代理（代理对象实现这些接口）
+				// 2、没有合理的接口，使用CGLIB代理（代理对象直接继承目标对象）
 				evaluateProxyInterfaces(beanClass, proxyFactory);
 			}
-			//设置advised的advisors
+			//添加advisor
 			proxyFactory.addAdvisor(this.advisor);
-			//自定义advised
+			//扩展自定义advised
 			customizeProxyFactory(proxyFactory);
 
-			// Use original ClassLoader if bean class not locally loaded in overriding class loader
 			ClassLoader classLoader = getProxyClassLoader();
 			if (classLoader instanceof SmartClassLoader smartClassLoader &&
 					classLoader != beanClass.getClassLoader()) {
 				classLoader = smartClassLoader.getOriginalClassLoader();
 			}
-			//获取代理类的Class对象
+			//设置加载器，获取代理对象类型
 			return proxyFactory.getProxyClass(classLoader);
 		}
 
@@ -102,41 +100,43 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 	/**
 	 * bean实例化后，如果bean是Advised类型，尝试向bean（Advised#addAdvisor）添加这个advisor，
 	 * 如果需要代理bean，则创建代理对象并返回
-	 * @param bean the new bean instance   原目标对象
-	 * @param beanName the name of the bean  bean名称
+	 * @param bean   目标对象
+	 * @param beanName   bean名称
 	 * @return  原目标对象或代理对象
 	 */
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) {
 		if (this.advisor == null || bean instanceof AopInfrastructureBean) {
-			// Ignore AOP infrastructure such as scoped proxies.
-			//不需要代理
+			//没有advisor、或bean是AopInfrastructureBean类型，忽略...
 			return bean;
 		}
 
 		if (bean instanceof Advised advised) {
-			//若bean本身就是代理对象（CGLIB与JDK生成的代理对象都会额外代理Advised接口，见AopProxyUtils#completeProxiedInterfaces）
-			// 如果this.advisor符合，直接添加
+			//代理对象会基础Advised接口（见AopProxyUtils#completeProxiedInterfaces）
+			//当前bean已经是代理对象，若advisor可以应用到目标对象且advised.frozen=false，则将advisor添加到代理对象中...
 			if (!advised.isFrozen() && isEligible(AopUtils.getTargetClass(bean))) {
-				// Add our local Advisor to the existing proxy's Advisor chain.
+				//是否需要放在advisor链的最前面？
 				if (this.beforeExistingAdvisors) {
 					advised.addAdvisor(0, this.advisor);
 				}
 				else if (advised.getTargetSource() == AdvisedSupport.EMPTY_TARGET_SOURCE &&
 						advised.getAdvisorCount() > 0) {
-					// No target, leave last Advisor in place and add new Advisor right before.
+					//没有发现目标对象，将当前advisor放入倒入第二个位置（最后一个向后移动）
+					//TODO 最后一个位置的advisor有特别作用？？？
 					advised.addAdvisor(advised.getAdvisorCount() - 1, this.advisor);
 					return bean;
 				}
 				else {
+					//直接添加到最后
 					advised.addAdvisor(this.advisor);
 				}
 				return bean;
 			}
 		}
 
-		//代理非Advised类型的bean（通过advisor增强功能）
+
 		if (isEligible(bean, beanName)) {
+			//bean是非代理对象，创建代理对象
 			ProxyFactory proxyFactory = prepareProxyFactory(bean, beanName);
 			if (!proxyFactory.isProxyTargetClass()) {
 				evaluateProxyInterfaces(bean.getClass(), proxyFactory);
@@ -153,7 +153,7 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 			return proxyFactory.getProxy(classLoader);
 		}
 
-		// No proxy needed.
+		//不需要代理
 		return bean;
 	}
 
@@ -191,6 +191,7 @@ public abstract class AbstractAdvisingBeanPostProcessor extends ProxyProcessorSu
 		if (this.advisor == null) {
 			return false;
 		}
+
 		//检测targetClass是否满足advisor增强条件？如果满足 - 将advice应用到targetClass
 		eligible = AopUtils.canApply(this.advisor, targetClass);
 		this.eligibleBeans.put(targetClass, eligible);

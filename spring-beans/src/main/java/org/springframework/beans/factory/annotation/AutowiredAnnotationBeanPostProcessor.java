@@ -317,7 +317,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 
 	/**
 	 * 解析类的所有构造器：
-	 *     1、当没有required=true时，会将所有带自动注入注解的构造器 + 无参构造器（无论是否含注解）返回
+	 *     1、当required=false时，会将所有带自动注入注解的构造器 + 无参构造器（无论是否含注解）返回
 	 *     2、当有有一个required=true时（且只能有一个），其他构造器不能含有自动注入注解，只会返回带注解的这个构造器
 	 * @param beanClass the raw class of the bean (never {@code null})
 	 * @param beanName the name of the bean

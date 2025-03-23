@@ -138,9 +138,8 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 	public static final String INFER_METHOD = "(inferred)";
 
 
-	/*
-	关于bean的类信息：可以是类的全限定类名或者Class对象
-	 */
+
+	//bean的类型（类的全限定类名 或者  Class对象）
 	@Nullable
 	private volatile Object beanClass;
 
@@ -210,9 +209,11 @@ public abstract class AbstractBeanDefinition extends BeanMetadataAttributeAccess
 
 	private boolean lenientConstructorResolution = true;
 
+	//工厂bean名称（用作创建真实bean）
 	@Nullable
 	private String factoryBeanName;
 
+	//工厂bean的方法名称（用作创建真实bean）
 	@Nullable
 	private String factoryMethodName;
 

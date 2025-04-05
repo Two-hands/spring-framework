@@ -16,65 +16,41 @@
 
 package org.springframework.core.type;
 
-import java.lang.annotation.Annotation;
-import java.util.Map;
-
-import org.springframework.core.annotation.MergedAnnotation;
+import org.springframework.core.annotation.*;
 import org.springframework.core.annotation.MergedAnnotation.Adapt;
-import org.springframework.core.annotation.MergedAnnotationCollectors;
-import org.springframework.core.annotation.MergedAnnotationPredicates;
-import org.springframework.core.annotation.MergedAnnotationSelectors;
-import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.lang.Nullable;
 import org.springframework.util.MultiValueMap;
 
+import java.lang.annotation.Annotation;
+import java.util.Map;
+
+
 /**
- * Defines access to the annotations of a specific type ({@link AnnotationMetadata class}
- * or {@link MethodMetadata method}), in a form that does not necessarily require the
- * class-loading.
- *
- * @author Juergen Hoeller
- * @author Mark Fisher
- * @author Mark Pollack
- * @author Chris Beams
- * @author Phillip Webb
- * @author Sam Brannen
- * @since 4.0
- * @see AnnotationMetadata
- * @see MethodMetadata
+ * 定义对特定目标（类或方法）上面注解的访问方法
  */
 public interface AnnotatedTypeMetadata {
 
 	/**
-	 * Return annotation details based on the direct annotations of the
-	 * underlying element.
-	 * @return merged annotations based on the direct annotations
-	 * @since 5.2
+	 * 获取目标（类或方法）上的所有注解
+	 * @return 直接标注的注解
 	 */
 	MergedAnnotations getAnnotations();
 
+
 	/**
-	 * Determine whether the underlying element has an annotation or meta-annotation
-	 * of the given type defined.
-	 * <p>If this method returns {@code true}, then
-	 * {@link #getAnnotationAttributes} will return a non-null Map.
-	 * @param annotationName the fully qualified class name of the annotation
-	 * type to look for
-	 * @return whether a matching annotation is defined
+	 * 目标（类或方法）上是否含有注解（annotationName）
+	 * @param annotationName 注解名称
+	 * @return true - 目标（类或方法）上含指定注解名
 	 */
 	default boolean isAnnotated(String annotationName) {
 		return getAnnotations().isPresent(annotationName);
 	}
 
+
 	/**
-	 * Retrieve the attributes of the annotation of the given type, if any (i.e. if
-	 * defined on the underlying element, as direct annotation or meta-annotation),
-	 * also taking attribute overrides on composed annotations into account.
-	 * @param annotationName the fully qualified class name of the annotation
-	 * type to look for
-	 * @return a Map of attributes, with the attribute name as key (e.g. "value")
-	 * and the defined attribute value as Map value. This return value will be
-	 * {@code null} if no matching annotation is defined.
+	 *  目标（类或方法）上注解（annotationName）的所有属性（若属性值被重写，以重写的属性为准[忽略重写前的属性值]）
+	 * @param annotationName 注解名称
+	 * @return 目标上指定注解的所有属性
 	 */
 	@Nullable
 	default Map<String, Object> getAnnotationAttributes(String annotationName) {
@@ -82,17 +58,10 @@ public interface AnnotatedTypeMetadata {
 	}
 
 	/**
-	 * Retrieve the attributes of the annotation of the given type, if any (i.e. if
-	 * defined on the underlying element, as direct annotation or meta-annotation),
-	 * also taking attribute overrides on composed annotations into account.
-	 * @param annotationName the fully qualified class name of the annotation
-	 * type to look for
-	 * @param classValuesAsString whether to convert class references to String
-	 * class names for exposure as values in the returned Map, instead of Class
-	 * references which might potentially have to be loaded first
-	 * @return a Map of attributes, with the attribute name as key (e.g. "value")
-	 * and the defined attribute value as Map value. This return value will be
-	 * {@code null} if no matching annotation is defined.
+	 * 目标（类或方法）上注解（annotationName）的所有属性（若属性值被重写，以重写的属性为准[忽略重写前的属性值]）
+	 * @param annotationName 注解名称
+	 * @param classValuesAsString  属性值是Class类型是否转为字符串？ true - 转为字符串（避免过早加载Class并初始化）
+	 * @return 目标上指定注解的所有属性
 	 */
 	@Nullable
 	default Map<String, Object> getAnnotationAttributes(String annotationName,
@@ -106,16 +75,11 @@ public interface AnnotatedTypeMetadata {
 		return annotation.asAnnotationAttributes(Adapt.values(classValuesAsString, true));
 	}
 
+
 	/**
-	 * Retrieve all attributes of all annotations of the given type, if any (i.e. if
-	 * defined on the underlying element, as direct annotation or meta-annotation).
-	 * Note that this variant does <i>not</i> take attribute overrides into account.
-	 * @param annotationName the fully qualified class name of the annotation
-	 * type to look for
-	 * @return a MultiMap of attributes, with the attribute name as key (e.g. "value")
-	 * and a list of the defined attribute values as Map value. This return value will
-	 * be {@code null} if no matching annotation is defined.
-	 * @see #getAllAnnotationAttributes(String, boolean)
+	 * 目标（类或方法）上注解（annotationName）的所有属性（若属性值被重写，以原有属性为准[忽略重写后的属性值]）
+	 * @param annotationName 注解名称
+	 * @return 目标上指定注解的所有属性
 	 */
 	@Nullable
 	default MultiValueMap<String, Object> getAllAnnotationAttributes(String annotationName) {
@@ -123,16 +87,10 @@ public interface AnnotatedTypeMetadata {
 	}
 
 	/**
-	 * Retrieve all attributes of all annotations of the given type, if any (i.e. if
-	 * defined on the underlying element, as direct annotation or meta-annotation).
-	 * Note that this variant does <i>not</i> take attribute overrides into account.
-	 * @param annotationName the fully qualified class name of the annotation
-	 * type to look for
-	 * @param classValuesAsString  whether to convert class references to String
-	 * @return a MultiMap of attributes, with the attribute name as key (e.g. "value")
-	 * and a list of the defined attribute values as Map value. This return value will
-	 * be {@code null} if no matching annotation is defined.
-	 * @see #getAllAnnotationAttributes(String)
+	 * 目标（类或方法）上注解（annotationName）的所有属性（若属性值被重写，以原有属性为准[忽略重写后的属性值]）
+	 * @param annotationName 注解名称
+	 * @param classValuesAsString 属性值是Class类型是否转为字符串？ true - 转为字符串（避免过早加载Class并初始化）
+	 * @return 目标上指定注解的所有属性
 	 */
 	@Nullable
 	default MultiValueMap<String, Object> getAllAnnotationAttributes(
@@ -145,5 +103,4 @@ public interface AnnotatedTypeMetadata {
 				.collect(MergedAnnotationCollectors.toMultiValueMap(map ->
 						map.isEmpty() ? null : map, adaptations));
 	}
-
 }

@@ -29,16 +29,10 @@ import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.Consumer;
 
+
 /**
- * {@link AnnotationVisitor} that can be used to construct a
- * {@link MergedAnnotation}.
- *
- * @author Phillip Webb
- * @since 5.2
- * @param <A> the annotation type
- *
- *  <br/>
- *  获取注解（视图）元数据，在SimpleAnnotationMetadataReadingVisitor中用于获取注解（视图）元数据
+ * 注解访问器，通过asm技术从字节码二进制流中解析类、方法、字段上的注解信息
+ * @param <A>  注解类型
  */
 class MergedAnnotationReadingVisitor<A extends Annotation> extends AnnotationVisitor {
 
@@ -48,10 +42,13 @@ class MergedAnnotationReadingVisitor<A extends Annotation> extends AnnotationVis
 	@Nullable
 	private final Object source;
 
+	//被解析的注解类型
 	private final Class<A> annotationType;
 
+	//访问器访问得到的所有结果都被封装到此对象中
 	private final Consumer<MergedAnnotation<A>> consumer;
 
+	//注解的所有属性
 	private final Map<String, Object> attributes = new LinkedHashMap<>(4);
 
 
@@ -92,8 +89,12 @@ class MergedAnnotationReadingVisitor<A extends Annotation> extends AnnotationVis
 
 	@Override
 	public void visitEnd() {
+		//注解对用的真实属性值（不是默认值）
+		// 注解的默认属性值只会出现在注解的字节码文件中，如：类C上有注解A，C的字节码文件
+		//        不含注解A的默认属性值，定义A注解的字节码文件含有其默认属性值
 		Map<String, Object> compactedAttributes =
 				(this.attributes.size() == 0 ? Collections.emptyMap() : this.attributes);
+		//解析此注解，构建TypeMappedAnnotation
 		MergedAnnotation<A> annotation = MergedAnnotation.of(
 				this.classLoader, this.source, this.annotationType, compactedAttributes);
 		this.consumer.accept(annotation);

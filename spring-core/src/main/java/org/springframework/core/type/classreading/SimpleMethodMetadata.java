@@ -21,15 +21,15 @@ import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.type.MethodMetadata;
 import org.springframework.lang.Nullable;
 
+
 /**
- * {@link MethodMetadata} created from a {@link SimpleMethodMetadataReadingVisitor}.
+ * <pre>
+ * 基于asm技术从字节码二进制流中解析出的类的方法：
+ *   1、方法基本信息，如：方法名、方法返回类型...
+ *   2、方法上的注解（MergedAnnotations）
  *
- * @author Phillip Webb
- * @author Sam Brannen
- * @since 5.2
- *
- * <br/>
- * SimpleMethodMetadataReadingVisitor读取的方法元数据
+ * <b> 快速获取指定类的字节码中的重要数据，无需经过类加载器加载 </b>
+ * </pre>
  */
 final class SimpleMethodMetadata implements MethodMetadata {
 

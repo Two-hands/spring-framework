@@ -16,10 +16,6 @@
 
 package org.springframework.core.type;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Map;
-
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.MergedAnnotations;
 import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
@@ -28,16 +24,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Map;
+
 /**
- * {@link MethodMetadata} implementation that uses standard reflection
- * to introspect a given {@code Method}.
- *
- * @author Juergen Hoeller
- * @author Mark Pollack
- * @author Chris Beams
- * @author Phillip Webb
- * @author Sam Brannen
- * @since 3.0
+ * 基于反射实现，提供了更详细的[方法元数据信息]，适用于需要详细方法信息的场景（用于类已经被加载并且已经有Method对象）
  */
 public class StandardMethodMetadata implements MethodMetadata {
 

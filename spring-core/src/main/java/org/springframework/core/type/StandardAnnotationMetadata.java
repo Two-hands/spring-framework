@@ -30,17 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * {@link AnnotationMetadata} implementation that uses standard reflection
- * to introspect a given {@link Class}.
- *
- * @author Juergen Hoeller
- * @author Mark Fisher
- * @author Chris Beams
- * @author Phillip Webb
- * @author Sam Brannen
- * @since 2.5
- *
- * <br/>
  * 基于反射实现，提供了更详细的[类元数据信息]，适用于需要详细类信息的场景（用于类已经被加载并且已经有Class对象）
  * SimpleAnnotationMetadata与StandardAnnotationMetadata明显区别在于：前者没有类的Class对象而后者有
  */

@@ -28,12 +28,15 @@
 package org.springframework.asm;
 
 /**
- * A visitor to visit a Java annotation. The methods of this class must be called in the following
- * order: ( {@code visit} | {@code visitEnum} | {@code visitAnnotation} | {@code visitArray} )*
- * {@code visitEnd}.
- *
- * @author Eric Bruneton
- * @author Eugene Kuleshov
+ * <pre>
+ * 实现类参考{@link org.springframework.core.type.classreading.MergedAnnotationReadingVisitor}
+ * 访问JAVA注解的访问器，此访问器必须按照如下顺序访问方法：
+ *    1、{@link #visit}
+ *    2、{@link #visitEnum}
+ *    3、{@link #visitAnnotation}
+ *    4、{@link #visitArray}
+ *    5、{@link #visitEnd}
+ * </pre>
  */
 public abstract class AnnotationVisitor {
 
@@ -41,6 +44,7 @@ public abstract class AnnotationVisitor {
    * The ASM API version implemented by this visitor. The value of this field must be one of the
    * {@code ASM}<i>x</i> values in {@link Opcodes}.
    */
+
   protected final int api;
 
   /**

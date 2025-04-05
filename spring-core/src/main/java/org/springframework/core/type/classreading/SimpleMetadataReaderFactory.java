@@ -26,13 +26,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
- * Simple implementation of the {@link MetadataReaderFactory} interface,
- * creating a new ASM {@link org.springframework.asm.ClassReader} for every request.
- *
- * @author Juergen Hoeller
- * @since 2.5
- *
- * MetadataReaderFactory接口的简单实现，可根据全限定类名定位字节码文件，并通过文件资源创建SimpleMetadataReader对象
+ * MetadataReaderFactory接口的简单实现，可根据全限定类名加载字节码文件二进制流，
+ * 创建SimpleMetadataReader对象，通过asm框架解析二进制流获取类的基本信息
  *
  */
 public class SimpleMetadataReaderFactory implements MetadataReaderFactory {
@@ -83,12 +78,10 @@ public class SimpleMetadataReaderFactory implements MetadataReaderFactory {
 			String resourcePath = ResourceLoader.CLASSPATH_URL_PREFIX +
 					ClassUtils.convertClassNameToResourcePath(className) + ClassUtils.CLASS_FILE_SUFFIX;
 			Resource resource = this.resourceLoader.getResource(resourcePath);
-			//根据类资源创建SimpleMetadataReader并返回
+			//根据类资源创建SimpleMetadataReader
 			return getMetadataReader(resource);
 		}
 		catch (FileNotFoundException ex) {
-			// Maybe an inner class name using the dot name syntax? Need to use the dollar syntax here...
-			// ClassUtils.forName has an equivalent check for resolution into Class references later on.
 			//如果资源获取失败：可能是内部类，而内部类与外部内之间可能用英文点（.）分割，需要将其替换为$再进行重新拼接加载
 			//如：如：className="org.springframework.Main.InnerClass" -> classpath:org/springframework/Main$InnerClass.class
 			int lastDotIndex = className.lastIndexOf('.');

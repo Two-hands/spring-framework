@@ -28,11 +28,13 @@
 package org.springframework.asm;
 
 /**
- * A visitor to visit a Java field. The methods of this class must be called in the following order:
- * ( {@code visitAnnotation} | {@code visitTypeAnnotation} | {@code visitAttribute} )* {@code
- * visitEnd}.
- *
- * @author Eric Bruneton
+ * <pre>
+ * 读取java的Class中的字段的访问器，访问顺序：
+ *    1、{@link #visitAnnotation} - 开始
+ *    2、{@link #visitTypeAnnotation}
+ *    3、{@link #visitAttribute}
+ *    4、{@link #visitEnd} - 结束
+ * </pre>
  */
 public abstract class FieldVisitor {
 

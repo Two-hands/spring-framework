@@ -28,17 +28,26 @@
 package org.springframework.asm;
 
 /**
- * A visitor to visit a Java class. The methods of this class must be called in the following order:
- * {@code visit} [ {@code visitSource} ] [ {@code visitModule} ][ {@code visitNestHost} ][ {@code
- * visitOuterClass} ] ( {@code visitAnnotation} | {@code visitTypeAnnotation} | {@code
- * visitAttribute} )* ( {@code visitNestMember} | [ {@code * visitPermittedSubclass} ] | {@code
- * visitInnerClass} | {@code visitRecordComponent} | {@code visitField} | {@code visitMethod} )*
- * {@code visitEnd}.
  *
- * @author Eric Bruneton
- *
- * <br/>
- * 用于读取字节码文件内容（此时字节码可能还未被类加载器加载）：定义在读取Class字节码时会触发的事件
+ * <pre>
+ *     实现类参考 {@link org.springframework.core.type.classreading.SimpleAnnotationMetadataReadingVisitor}
+ *     读取java的Class的访问器，访问顺序：
+ *     1、{@link #visit} - 开始
+ *     2、{@link #visitSource}
+ *     3、{@link #visitModule}
+ *     4、{@link #visitNestHost}
+ *     5、{@link #visitOuterClass}
+ *     6、{@link #visitAnnotation}
+ *     7、{@link #visitTypeAnnotation}
+ *     8、{@link #visitAttribute}
+ *     9、{@link #visitNestMember}
+ *     10、{@link #visitPermittedSubclass}
+ *     11、{@link #visitInnerClass}
+ *     12、{@link #visitRecordComponent}
+ *     13、{@link #visitField}
+ *     14、{@link #visitMethod}
+ *     15、{@link #visitEnd}  - 结束
+ * </pre>
  */
 public abstract class ClassVisitor {
 

@@ -28,66 +28,50 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * {@link AnnotationMetadata} created from a
- * {@link SimpleAnnotationMetadataReadingVisitor}.
+ * <pre>
+ * 基于asm技术从字节码二进制流中解析出的类的信息，其包含：
+ *   1、类的基本信息，如：类名、方法标志、直接父类、直接接口、内部类
+ *   2、类的方法（MethodMetadata）
+ *   3、类上的注解（MergedAnnotations）
  *
- * @author Phillip Webb
- * @author Sam Brannen
- * @author Juergen Hoeller
- * @since 5.2
- *
- * <br/>
- * 基于ASM，主要用于快速获取类上的[注解信息]，适用于需要快速解析注解的场景（用于类还未被加载，无需加载类提前解析到部分数据）
- * SimpleAnnotationMetadata与StandardAnnotationMetadata明显区别在于：前者没有类的Class对象而后者有
- *
- * 不需要加载类和方法的所有数据，不涉及类的加载；如果有注解，需要加载注解类（注解类非常较少，不会影响性能）
+ * <b> 快速获取指定类的字节码中的重要数据，无需经过类加载器加载 </b>
+ * </pre>
  */
 final class SimpleAnnotationMetadata implements AnnotationMetadata {
 
-	/*
-	类的全限定类名
-	 */
+	//类名
 	private final String className;
 
-	/*
-	类的访问权限信息：包含诸如ACC_PUBLIC、ACC_FINAL、ACC_SUPER、ACC_INTERFACE、ACC_ABSTRACT、ACC_SYNTHETIC、ACC_ANNOTATION、ACC_ENUM....
-	 */
+	//类的访问标志
 	private final int access;
 
+	//当前内部类的外部类名称
 	@Nullable
 	private final String enclosingClassName;
 
-	/*
-	直接继承的父类
-	 */
+	//类的直接父类
 	@Nullable
 	private final String superClassName;
 
+	//当前类是静态内部类？true - 是
 	private final boolean independentInnerClass;
 
-	/*
-	直接实现的接口
-	 */
+
+	//类的直接实现接口
 	private final Set<String> interfaceNames;
 
-	/*
-	类中包含的所有内部类：包含静态内部类（static修饰）和普通的内部类（非static修饰）
-	 */
+
+	//类中的内部类
 	private final Set<String> memberClassNames;
 
-	/*
-	类中直接声明的所有方法（包含方法[创建]的匿名对象所声明的新方法），不包含方法中局部类（方法中声明的类）
-	 */
+	//类中的所有方法
 	private final Set<MethodMetadata> declaredMethods;
 
-	/*
-	类上标注的注解
-	 */
+	//类上的注解
 	private final MergedAnnotations annotations;
 
-	/*
-	注解全限定类名集合
-	 */
+
+	//类上的注解的全限定类名（懒初始化）
 	@Nullable
 	private Set<String> annotationTypes;
 

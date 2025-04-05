@@ -1008,6 +1008,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	protected void resetCommonCaches() {
 		ReflectionUtils.clearCache();
+		//清空注解元数据（扫描和解析类为BeanDefinition过程中加载的注解元数据）
 		AnnotationUtils.clearCache();
 		ResolvableType.clearCache();
 		CachedIntrospectionResults.clearClassLoader(getClassLoader());

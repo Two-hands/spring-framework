@@ -28,23 +28,29 @@
 package org.springframework.asm;
 
 /**
- * A visitor to visit a Java method. The methods of this class must be called in the following
- * order: ( {@code visitParameter} )* [ {@code visitAnnotationDefault} ] ( {@code visitAnnotation} |
- * {@code visitAnnotableParameterCount} | {@code visitParameterAnnotation} {@code
- * visitTypeAnnotation} | {@code visitAttribute} )* [ {@code visitCode} ( {@code visitFrame} |
- * {@code visit<i>X</i>Insn} | {@code visitLabel} | {@code visitInsnAnnotation} | {@code
- * visitTryCatchBlock} | {@code visitTryCatchAnnotation} | {@code visitLocalVariable} | {@code
- * visitLocalVariableAnnotation} | {@code visitLineNumber} )* {@code visitMaxs} ] {@code visitEnd}.
- * In addition, the {@code visit<i>X</i>Insn} and {@code visitLabel} methods must be called in the
- * sequential order of the bytecode instructions of the visited code, {@code visitInsnAnnotation}
- * must be called <i>after</i> the annotated instruction, {@code visitTryCatchBlock} must be called
- * <i>before</i> the labels passed as arguments have been visited, {@code
- * visitTryCatchBlockAnnotation} must be called <i>after</i> the corresponding try catch block has
- * been visited, and the {@code visitLocalVariable}, {@code visitLocalVariableAnnotation} and {@code
- * visitLineNumber} methods must be called <i>after</i> the labels passed as arguments have been
- * visited.
  *
- * @author Eric Bruneton
+ * <pre>
+ *     实现类参考{@link org.springframework.core.type.classreading.SimpleMethodMetadataReadingVisitor}
+ *      读取java的Class中方法访问器，访问顺序：
+ *       1、{@link #visitParameter}
+ *       2、{@link #visitAnnotationDefault}
+ *       3、{@link #visitAnnotation}
+ *       4、{@link #visitAnnotableParameterCount}
+ *       5、{@link #visitParameterAnnotation}
+ *       6、{@link #visitTypeAnnotation}
+ *       7、{@link #visitAttribute}
+ *       8、{@link #visitCode}
+ *       9、{@link #visitFrame}
+ *       10、 visit<i>X</i>Insn
+ *       11、{@link #visitLabel}
+ *       12、{@link #visitInsnAnnotation}
+ *       13、{@link #visitTryCatchBlock}
+ *       14、{@link #visitTryCatchAnnotation}
+ *       15、{@link #visitLocalVariable}
+ *       16、{@link #visitLocalVariableAnnotation}
+ *       17、{@link #visitLineNumber} * {@link #visitMaxs}
+ *       18、{@link #visitEnd}
+ * </pre>
  */
 public abstract class MethodVisitor {
 

@@ -27,43 +27,50 @@ import org.springframework.util.ClassUtils;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+
 /**
- * ASM class visitor that creates {@link SimpleAnnotationMetadata}.
- *
- * @author Phillip Webb
- * @author Juergen Hoeller
- * @since 5.2
- *
- * <br/>
- * asm中visitor的实现之一：从class文件获取字节码，获取类、注解、方法等（视图）元数据
+ * 类访问器，用于通过asm技术从字节码二进制流中解析类的信息，包括字段（无）、
+ * 方法（{@link org.springframework.core.type.classreading.SimpleMethodMetadataReadingVisitor}）、
+ * 注解{@link org.springframework.core.type.classreading.MergedAnnotationReadingVisitor}的定义信息...
  */
 final class SimpleAnnotationMetadataReadingVisitor extends ClassVisitor {
 
 	@Nullable
 	private final ClassLoader classLoader;
 
+	//类名
 	private String className = "";
 
+	//类的访问标志
 	private int access;
 
+	//类的直接父类
 	@Nullable
 	private String superClassName;
 
+	//当前类（当前类是内部类）的外部类名称
 	@Nullable
 	private String enclosingClassName;
 
+	//当前类是静态内部类？true - 是
 	private boolean independentInnerClass;
 
+	//类实现的接口
 	private final Set<String> interfaceNames = new LinkedHashSet<>(4);
 
+	//类中的内部类
 	private final Set<String> memberClassNames = new LinkedHashSet<>(4);
 
+	//类上的注解
 	private final Set<MergedAnnotation<?>> annotations = new LinkedHashSet<>(4);
 
+	//类中的方法
 	private final Set<MethodMetadata> declaredMethods = new LinkedHashSet<>(4);
 
+	//访问器访问得到的所有结果最终封装到此对象中
 	@Nullable
 	private SimpleAnnotationMetadata metadata;
+
 
 	@Nullable
 	private Source source;

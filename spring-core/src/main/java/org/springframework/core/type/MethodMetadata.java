@@ -17,57 +17,56 @@
 package org.springframework.core.type;
 
 /**
- * Interface that defines abstract access to the annotations of a specific
- * method, in a form that does not require that method's class to be loaded yet.
- *
- * @author Juergen Hoeller
- * @author Mark Pollack
- * @author Chris Beams
- * @author Phillip Webb
- * @since 3.0
- * @see StandardMethodMetadata
- * @see AnnotationMetadata#getAnnotatedMethods
- * @see AnnotatedTypeMetadata
+ * 定义方法[通过asm技术从字节码二进制流中解析得到、或反射]的方法的相关信息
  */
 public interface MethodMetadata extends AnnotatedTypeMetadata {
 
 	/**
-	 * Get the name of the underlying method.
+	 * 获取方法名称
+	 * @return 方法名
 	 */
 	String getMethodName();
 
+
 	/**
-	 * Get the fully-qualified name of the class that declares the underlying method.
+	 * 获取方法所在的类名称
+	 * @return 方法所在的类名称
 	 */
 	String getDeclaringClassName();
 
+
 	/**
-	 * Get the fully-qualified name of the underlying method's declared return type.
-	 * @since 4.2
+	 * 获取方法返回类型的名称
+	 * @return 返回类型名称
 	 */
 	String getReturnTypeName();
 
+
 	/**
-	 * Determine whether the underlying method is effectively abstract:
-	 * i.e. marked as abstract in a class or declared as a regular,
-	 * non-default method in an interface.
-	 * @since 4.2
+	 * 是否为抽象方法？
+	 * @return  true - 抽象方法
 	 */
 	boolean isAbstract();
 
 	/**
-	 * Determine whether the underlying method is declared as 'static'.
+	 * 是否为静态方法？
+	 * @return true - 静态方法
 	 */
 	boolean isStatic();
 
 	/**
-	 * Determine whether the underlying method is marked as 'final'.
+	 * 方法是否有final
+	 * @return  true - 方法含final
 	 */
 	boolean isFinal();
 
 	/**
 	 * Determine whether the underlying method is overridable,
 	 * i.e. not marked as static, final, or private.
+	 */
+	/**
+	 * 方法是否可重写（方法不含static、final、private关键字）？
+	 * @return true - 方法可重写
 	 */
 	boolean isOverridable();
 

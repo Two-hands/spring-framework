@@ -30,12 +30,20 @@ package org.springframework.asm;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+
 /**
- * A Java field or method type. This class can be used to make it easier to manipulate type and
- * method descriptors.
+ * <pre>
+ * 字节码文件中字段或方法描述符的对应类型，可以简单快速的根据描述符生成对应的类型（基本数据类型、数组、引用数据类型）
  *
- * @author Eric Bruneton
- * @author Chris Nokleberg
+ * 字段描述符含一个<b>字段类型</b>：
+ *   1、基础类型：B（byte）、C(char)、D(double)、F(float)、I(int)、J(long)、S(short)、Z(boolean)
+ *   2、引用类型：L + className + ;（className - 全限定类名）
+ *   3、数组类型：[componentType （componentType其实就是字段类型，这是一维数组表示方式，二维则是[[componentType），维度由[个数决定
+ *
+ * 方法描述符 = 参数描述符 + 返回值描述符
+ *    参数描述符：方法可能有0或多个参数，每个参数都用一个参数描述符表示，每个参数描述符就是一个<b>字段类型</b>
+ *    返回值描述符：返回可能是void（用V表示，即VoidDescriptor - 空返回值描述符），非void类型则是一个<b>字段类型</b>
+ * </pre>
  */
 public final class Type {
 

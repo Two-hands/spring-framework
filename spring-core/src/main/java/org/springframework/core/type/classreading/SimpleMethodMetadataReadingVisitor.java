@@ -28,32 +28,31 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+
 /**
- * ASM method visitor that creates {@link SimpleMethodMetadata}.
- *
- * @author Phillip Webb
- * @author Sam Brannen
- * @author Juergen Hoeller
- * @since 5.2
- *
- * <br/>
- * 获取方法（视图）元数据，在SimpleAnnotationMetadataReadingVisitor中用于获取方法（视图）元数据
+ * 方法访问器，用于通过asm技术从字节码二进制流中解析出指定方法的定义信息，并封装为SimpleMethodMetadata
  */
 final class SimpleMethodMetadataReadingVisitor extends MethodVisitor {
 
 	@Nullable
 	private final ClassLoader classLoader;
 
+	//方法所在类的类名
 	private final String declaringClassName;
 
+	//方法的访问标志
 	private final int access;
 
+	//方法名称
 	private final String methodName;
 
+	//方法描述符，含参数类型和返回值类型
 	private final String descriptor;
 
+	//方法上的注解
 	private final List<MergedAnnotation<?>> annotations = new ArrayList<>(4);
 
+	//访问器访问得到的所有结果都被封装到此对象中
 	private final Consumer<SimpleMethodMetadata> consumer;
 
 	@Nullable

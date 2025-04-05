@@ -16,29 +16,29 @@
 
 package org.springframework.core.annotation;
 
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+import org.springframework.util.ConcurrentReferenceHashMap;
+import org.springframework.util.ReflectionUtils;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ConcurrentReferenceHashMap;
-import org.springframework.util.ReflectionUtils;
 
 /**
- * Provides a quick way to access the attribute methods of an {@link Annotation}
- * with consistent ordering as well as a few useful utility methods.
- *
- * @author Phillip Webb
- * @author Sam Brannen
- * @since 5.2
+ * <pre>
+ * 提供一种快速方法给定注解类型{@link Annotation}的合法的属性方法[按一定顺序，不一定是其定义顺序]的工具
+ * <b>注意：若注解的某个属性方法methodA返回值是Class&lt;T&gt类型（T表示任意类型），只有当methodA方法被调用时（直接调用或反射调用该方法），才会触发T类型的加载</b>
+ *  </pre>
  */
 final class AttributeMethods {
 
 	static final AttributeMethods NONE = new AttributeMethods(null, new Method[0]);
 
+	//全局，缓存解析过的注解
 	static final Map<Class<? extends Annotation>, AttributeMethods> cache = new ConcurrentReferenceHashMap<>();
 
 	private static final Comparator<Method> methodComparator = (m1, m2) -> {
@@ -49,15 +49,20 @@ final class AttributeMethods {
 	};
 
 
+	// 注解类型
 	@Nullable
 	private final Class<? extends Annotation> annotationType;
 
+	// 注解的所有合法属性方法（按定义顺序，数组元素值非null）
 	private final Method[] attributeMethods;
 
+	//记录每个位置的属性方法是否需要抛异常？位置元素为true[返回类型是Class或Class数组]表示需要
 	private final boolean[] canThrowTypeNotPresentException;
 
+	// 是否至少有一个属性方法定义了默认值？true - 有一个属性方法有默认值
 	private final boolean hasDefaultValueMethod;
 
+	// 是否至少有一个属性方法的返回类型是Annotation或Annotation数组？ true - 有属性方法含Class类型
 	private final boolean hasNestedAnnotation;
 
 
@@ -71,12 +76,16 @@ final class AttributeMethods {
 			Method method = this.attributeMethods[i];
 			Class<?> type = method.getReturnType();
 			if (!foundDefaultValueMethod && (method.getDefaultValue() != null)) {
+				//发现有属性方法有默认返回值
 				foundDefaultValueMethod = true;
 			}
 			if (!foundNestedAnnotation && (type.isAnnotation() || (type.isArray() && type.getComponentType().isAnnotation()))) {
+				//发现有属性方法返回类型是注解或注解数组
 				foundNestedAnnotation = true;
 			}
 			ReflectionUtils.makeAccessible(method);
+			//注意：注解中属性返回类型是Class<T>时（T为任意类型），当T不存在时，不会影响加载此属性方法
+			// 属性方法返回类型是Class或Class数组，记录此方法可以抛异常
 			this.canThrowTypeNotPresentException[i] = (type == Class.class || type == Class[].class || type.isEnum());
 		}
 		this.hasDefaultValueMethod = foundDefaultValueMethod;
@@ -239,21 +248,30 @@ final class AttributeMethods {
 	}
 
 
+
 	/**
-	 * Get the attribute methods for the given annotation type.
-	 * @param annotationType the annotation type
-	 * @return the attribute methods for the annotation type
+	 * 获取给定注解类型的所有属性方法
+	 * @param annotationType 注解类型
+	 * @return 注解的属性方法
 	 */
 	static AttributeMethods forAnnotationType(@Nullable Class<? extends Annotation> annotationType) {
 		if (annotationType == null) {
 			return NONE;
 		}
+		//解析过后进行缓存
 		return cache.computeIfAbsent(annotationType, AttributeMethods::compute);
 	}
 
+	/**
+	 * 解析给定注解类型，获取其所有的属性方法
+	 * @param annotationType 需要解析属性方法的注解类型
+	 * @return 属性方法集合（包含注解类型及其合法的属性方法）
+	 */
 	private static AttributeMethods compute(Class<? extends Annotation> annotationType) {
+		//通过返回获取[注解]声明的所有属性方法（Class#getDeclaredMethods）
 		Method[] methods = annotationType.getDeclaredMethods();
 		int size = methods.length;
+		// 跳过methods中的有参的方法 和 返回类型是void的方法
 		for (int i = 0; i < methods.length; i++) {
 			if (!isAttributeMethod(methods[i])) {
 				methods[i] = null;
@@ -263,11 +281,20 @@ final class AttributeMethods {
 		if (size == 0) {
 			return NONE;
 		}
+
+		//方法排序（按方法名字典顺序排序，null值向后移）
 		Arrays.sort(methods, methodComparator);
+		//重新分配数组，去除null元素
 		Method[] attributeMethods = Arrays.copyOf(methods, size);
+		//将[注解]类型与其合法的属性方法一起封装成AttributeMethods对象
 		return new AttributeMethods(annotationType, attributeMethods);
 	}
 
+	/**
+	 * 判断给定方法是否为注解的属性方法？ - 判断条件：无参方法且有返回类型[不为void]
+	 * @param method 需要判断的方法
+	 * @return true - 为注解属性方法
+	 */
 	private static boolean isAttributeMethod(Method method) {
 		return (method.getParameterCount() == 0 && method.getReturnType() != void.class);
 	}

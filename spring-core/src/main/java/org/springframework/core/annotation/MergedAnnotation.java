@@ -16,20 +16,15 @@
 
 package org.springframework.core.annotation;
 
+import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
+import org.springframework.lang.Nullable;
+
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Inherited;
 import java.lang.reflect.AnnotatedElement;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import org.springframework.core.annotation.MergedAnnotations.SearchStrategy;
-import org.springframework.lang.Nullable;
 
 /**
  * A single merged annotation returned from a {@link MergedAnnotations}
@@ -593,22 +588,23 @@ public interface MergedAnnotation<A extends Annotation> {
 		return of(null, source, annotationType, attributes);
 	}
 
+
+
+
 	/**
-	 * Create a new {@link MergedAnnotation} instance of the specified
-	 * annotation type with attribute values supplied by a map.
-	 * @param classLoader the class loader used to resolve class attributes
-	 * @param source the source for the annotation. This source is used only for
-	 * information and logging. It does not need to <em>actually</em> contain
-	 * the specified annotations and it will not be searched.
-	 * @param annotationType the annotation type
-	 * @param attributes the annotation attributes or {@code null} if just default
-	 * values should be used
-	 * @return a {@link MergedAnnotation} instance for the annotation and attributes
+	 * 为给定的注解类型（annotationType）和其真实属性值[非默认值]（attributes）构建一个MergedAnnotation实例
+	 * MergedAnnotation的实际类型为TypeMappedAnnotation
+	 * @param classLoader  用于加载注解的属性方法
+	 * @param source  仅用于信息和日志记录，无实际意义
+	 * @param annotationType 被解析的注解的Class
+	 * @param attributes 被解析的注解的真实属性值集合
+	 * @return 类型为TypeMappedAnnotation的MergedAnnotation实例
+	 * @param <A> 注解的类型
 	 */
 	static <A extends Annotation> MergedAnnotation<A> of(
 			@Nullable ClassLoader classLoader, @Nullable Object source,
 			Class<A> annotationType, @Nullable Map<String, ?> attributes) {
-
+		//创建TypeMappedAnnotation实例
 		return TypeMappedAnnotation.of(classLoader, source, annotationType, attributes);
 	}
 

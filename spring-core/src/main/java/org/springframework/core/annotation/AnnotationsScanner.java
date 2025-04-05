@@ -16,15 +16,6 @@
 
 package org.springframework.core.annotation;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Member;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.function.Predicate;
-
 import org.springframework.core.BridgeMethodResolver;
 import org.springframework.core.Ordered;
 import org.springframework.core.ResolvableType;
@@ -34,6 +25,15 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.ReflectionUtils;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Predicate;
 
 /**
  * Scanner to search for relevant annotations in the annotation hierarchy of an
@@ -440,6 +440,14 @@ abstract class AnnotationsScanner {
 		return null;
 	}
 
+	/**
+	 * <pre>
+	 * 获取目标(注解、类、方法、字段)上的所有[有效]的注解
+	 * 有效：
+	 *   1、注解不以java.lang以及org.springframework.lang开头
+	 *   2、注解属性返回类型含Class&lt;T&gt; 时,类型T可被加载
+	 *   </pre>
+	 */
 	static Annotation[] getDeclaredAnnotations(AnnotatedElement source, boolean defensive) {
 		boolean cached = false;
 		Annotation[] annotations = declaredAnnotationCache.get(source);
@@ -447,11 +455,15 @@ abstract class AnnotationsScanner {
 			cached = true;
 		}
 		else {
+			//获取source上标注的所有注解
 			annotations = source.getDeclaredAnnotations();
 			if (annotations.length != 0) {
 				boolean allIgnored = true;
 				for (int i = 0; i < annotations.length; i++) {
 					Annotation annotation = annotations[i];
+					//过滤注解：
+					// 1、以java.lang以及org.springframework.lang开头
+					// 2、若注解属性返回类型含Class<T> ,且T无法加载
 					if (isIgnorable(annotation.annotationType()) ||
 							!AttributeMethods.forAnnotationType(annotation.annotationType()).canLoad(annotation)) {
 						annotations[i] = null;

@@ -16,28 +16,18 @@
 
 package org.springframework.core.annotation;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.core.annotation.AnnotationTypeMapping.MirrorSets.MirrorSet;
 import org.springframework.lang.Nullable;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * Provides mapping information for a single annotation (or meta-annotation) in
@@ -70,20 +60,27 @@ final class AnnotationTypeMapping {
 	private static final MirrorSet[] EMPTY_MIRROR_SETS = new MirrorSet[0];
 
 
+	//当前类代表根注解时该值为null，若当前注解为注解A的元注解，则该值为注解A的映射信息
 	@Nullable
 	private final AnnotationTypeMapping source;
 
+	//当前类代表根注解时该值为this，若当前注解为注解A的元注解，则该值为注解A的映射信息
 	private final AnnotationTypeMapping root;
 
+	//为0表示为根注解，否则表示元注解解析的深度
 	private final int distance;
 
+	//注解类型
 	private final Class<? extends Annotation> annotationType;
 
+	//注解类型A的元注解类型（包含A）
 	private final List<Class<? extends Annotation>> metaTypes;
 
+	//注解为根注解时为null，为元注解类型时表示元注解
 	@Nullable
 	private final Annotation annotation;
 
+	//注解的属性方法
 	private final AttributeMethods attributes;
 
 	private final MirrorSets mirrorSets;
@@ -96,6 +93,7 @@ final class AnnotationTypeMapping {
 
 	private final AnnotationTypeMapping[] annotationValueSource;
 
+	// 属性方法的别名映射，key - 目标属性方法，value - 引用目标属性方法的其他注解的属性方法
 	private final Map<Method, List<Method>> aliasedBy;
 
 	private final boolean synthesizable;
@@ -142,6 +140,7 @@ final class AnnotationTypeMapping {
 		Map<Method, List<Method>> aliasedBy = new HashMap<>();
 		for (int i = 0; i < this.attributes.size(); i++) {
 			Method attribute = this.attributes.get(i);
+			//获取属性方法上的@AliasFor注解
 			AliasFor aliasFor = AnnotationsScanner.getDeclaredAnnotation(attribute, AliasFor.class);
 			if (aliasFor != null) {
 				Method target = resolveAliasTarget(attribute, aliasFor);
@@ -155,6 +154,20 @@ final class AnnotationTypeMapping {
 		return resolveAliasTarget(attribute, aliasFor, true);
 	}
 
+	/**
+	 * <pre>
+	 * 尝试获取属性方法上@AliasFor注解指定的目标注解的指定属性方法
+	 * 如：获取注解B的test()属性方法的别名为注解A的test()，返回结果Method就是A#test
+	 *  &#64;interface A{
+	 *      String test();
+	 *  }
+	 *
+	 *  &#64;interface B{
+	 *      &#64;AliasFor(annotation=A.class)
+	 *      String test();
+	 *  }
+	 * </pre>
+	 */
 	private Method resolveAliasTarget(Method attribute, AliasFor aliasFor, boolean checkAliasPair) {
 		if (StringUtils.hasText(aliasFor.value()) && StringUtils.hasText(aliasFor.attribute())) {
 			throw new AnnotationConfigurationException(String.format(
@@ -167,6 +180,8 @@ final class AnnotationTypeMapping {
 		if (targetAnnotation == Annotation.class) {
 			targetAnnotation = this.annotationType;
 		}
+
+		//首先尝试获取@AliasFor的attribute()值，若为空串再尝试获取value()值，若为空串最后就获取被@AliasFor标注的属性方法的名称
 		String targetAttributeName = aliasFor.attribute();
 		if (!StringUtils.hasLength(targetAttributeName)) {
 			targetAttributeName = aliasFor.value();
@@ -174,6 +189,8 @@ final class AnnotationTypeMapping {
 		if (!StringUtils.hasLength(targetAttributeName)) {
 			targetAttributeName = attribute.getName();
 		}
+
+		//获取@AliasFor注解指定的目标注解的targetAttributeName属性方法
 		Method target = AttributeMethods.forAnnotationType(targetAnnotation).get(targetAttributeName);
 		if (target == null) {
 			if (targetAnnotation == this.annotationType) {
@@ -198,6 +215,8 @@ final class AnnotationTypeMapping {
 					AttributeMethods.describe(attribute),
 					AttributeMethods.describe(target)));
 		}
+
+
 		if (isAliasPair(target) && checkAliasPair) {
 			AliasFor targetAliasFor = target.getAnnotation(AliasFor.class);
 			if (targetAliasFor != null) {

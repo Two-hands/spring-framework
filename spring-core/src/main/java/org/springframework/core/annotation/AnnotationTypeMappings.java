@@ -16,17 +16,12 @@
 
 package org.springframework.core.annotation;
 
-import java.lang.annotation.Annotation;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.springframework.lang.Nullable;
 import org.springframework.util.ConcurrentReferenceHashMap;
+
+import java.lang.annotation.Annotation;
+import java.util.*;
+
 
 /**
  * Provides {@link AnnotationTypeMapping} information for a single source
@@ -55,10 +50,13 @@ final class AnnotationTypeMappings {
 	private static final Map<AnnotationFilter, Cache> noRepeatablesCache = new ConcurrentReferenceHashMap<>();
 
 
+	//@Repeatable注解的检索策略
 	private final RepeatableContainers repeatableContainers;
 
+	// 注解的过滤策略（定义扫描注解元注解过程中需要忽略的注解）
 	private final AnnotationFilter filter;
 
+	// 扫描得到的注解集合（包含注解及其元注解[以及元注解的元注解...]）
 	private final List<AnnotationTypeMapping> mappings;
 
 
@@ -69,6 +67,8 @@ final class AnnotationTypeMappings {
 		this.repeatableContainers = repeatableContainers;
 		this.filter = filter;
 		this.mappings = new ArrayList<>();
+
+		//递归解析注解的元注解，元注解的元注解....
 		addAllMappings(annotationType, visitedAnnotationTypes);
 		this.mappings.forEach(AnnotationTypeMapping::afterAllMappingsSet);
 	}
@@ -77,20 +77,29 @@ final class AnnotationTypeMappings {
 	private void addAllMappings(Class<? extends Annotation> annotationType,
 			Set<Class<? extends Annotation>> visitedAnnotationTypes) {
 		Deque<AnnotationTypeMapping> queue = new ArrayDeque<>();
+		//先创建annotationType注解的AnnotationTypeMapping实例，并放入队列
 		addIfPossible(queue, null, annotationType, null, visitedAnnotationTypes);
 		while (!queue.isEmpty()) {
+			//从队列中移除AnnotationTypeMapping，加入到mappings，并解析其元注解，放入队列，并循环处理队列中的结果
 			AnnotationTypeMapping mapping = queue.removeFirst();
 			this.mappings.add(mapping);
 			addMetaAnnotationsToQueue(queue, mapping);
 		}
 	}
 
+	/**
+	 * 解析注解的元注解，将符合条件的元注解放入队列中，迭代处理元注解
+	 * @param queue 注解和其元注解队列
+	 * @param source 注解的AnnotationTypeMapping
+	 */
 	private void addMetaAnnotationsToQueue(Deque<AnnotationTypeMapping> queue, AnnotationTypeMapping source) {
+		// 获取指定[注解类型]的所有[元注解]（忽略以java.lang以及org.springframework.lang开头 或 属性方法返回类型含Class<T>但T类型无法加载的元注解）
 		Annotation[] metaAnnotations = AnnotationsScanner.getDeclaredAnnotations(source.getAnnotationType(), false);
 		for (Annotation metaAnnotation : metaAnnotations) {
 			if (!isMappable(source, metaAnnotation)) {
 				continue;
 			}
+			//获取[元注解]的value()方法返回的含@Repeatable的注解数组
 			Annotation[] repeatedAnnotations = this.repeatableContainers.findRepeatedAnnotations(metaAnnotation);
 			if (repeatedAnnotations != null) {
 				for (Annotation repeatedAnnotation : repeatedAnnotations) {
@@ -166,26 +175,28 @@ final class AnnotationTypeMappings {
 	}
 
 
+
 	/**
-	 * Create {@link AnnotationTypeMappings} for the specified annotation type.
-	 * @param annotationType the source annotation type
-	 * @return type mappings for the annotation type
+	 * 为给定的注解类型创建对应的AnnotationTypeMappings实例
+	 * @param annotationType 注解Class类型
+	 * @return AnnotationTypeMappings实例
 	 */
 	static AnnotationTypeMappings forAnnotationType(Class<? extends Annotation> annotationType) {
 		return forAnnotationType(annotationType, new HashSet<>());
 	}
 
+
 	/**
-	 * Create {@link AnnotationTypeMappings} for the specified annotation type.
-	 * @param annotationType the source annotation type
-	 * @param visitedAnnotationTypes the set of annotations that we have already
-	 * visited; used to avoid infinite recursion for recursive annotations which
-	 * some JVM languages support (such as Kotlin)
-	 * @return type mappings for the annotation type
+	 * 为给定的注解类型创建对应的AnnotationTypeMappings实例
+	 * @param annotationType 注解Class类型
+	 * @param visitedAnnotationTypes 用于记录已经被处理的注解集，避免注解无限递归解析
+	 * @return AnnotationTypeMappings实例
 	 */
 	static AnnotationTypeMappings forAnnotationType(Class<? extends Annotation> annotationType,
 			Set<Class<? extends Annotation>> visitedAnnotationTypes) {
-
+		// annotationType - 注解类型
+		// RepeatableContainers.standardRepeatables() - 尝试获取注解类型的value()方法（返回类型必须是[注解数组]且注解上含@Repeatable注解）
+		// AnnotationFilter.PLAIN - 忽略java.lang和org.springframework.lang开头的注解
 		return forAnnotationType(annotationType, RepeatableContainers.standardRepeatables(),
 				AnnotationFilter.PLAIN, visitedAnnotationTypes);
 	}
@@ -273,6 +284,12 @@ final class AnnotationTypeMappings {
 			return this.mappings.computeIfAbsent(annotationType, key -> createMappings(key, visitedAnnotationTypes));
 		}
 
+		/**
+		 * 真正根据注解类型创建对应的AnnotationTypeMappings实例的方法
+		 * @param annotationType  注解类型
+		 * @param visitedAnnotationTypes 记录已经解析过的注解类型（避免无限递归）
+		 * @return
+		 */
 		private AnnotationTypeMappings createMappings(Class<? extends Annotation> annotationType,
 				Set<Class<? extends Annotation>> visitedAnnotationTypes) {
 			return new AnnotationTypeMappings(this.repeatableContainers, this.filter, annotationType,

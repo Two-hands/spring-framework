@@ -16,15 +16,15 @@
 
 package org.springframework.core.annotation;
 
-import java.lang.annotation.Annotation;
-import java.lang.annotation.Repeatable;
-import java.lang.reflect.Method;
-import java.util.Map;
-
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ObjectUtils;
+
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Repeatable;
+import java.lang.reflect.Method;
+import java.util.Map;
 
 /**
  * Strategy used to determine annotations that act as containers for other
@@ -100,6 +100,11 @@ public abstract class RepeatableContainers {
 	 * {@link Repeatable @Repeatable} annotation.
 	 * @return a {@link RepeatableContainers} instance
 	 */
+
+	/**
+	 * 返回StandardRepeatableContainers实例，用于搜索java中{@link Repeatable @Repeatable}注解
+	 * @return
+	 */
 	public static RepeatableContainers standardRepeatables() {
 		return StandardRepeatableContainers.INSTANCE;
 	}
@@ -137,14 +142,15 @@ public abstract class RepeatableContainers {
 	}
 
 
+
 	/**
-	 * Standard {@link RepeatableContainers} implementation that searches using
-	 * Java's {@link Repeatable @Repeatable} annotation.
+	 * RepeatableContainers的标准实现，用于搜索java提供的{@link Repeatable @Repeatable}注解
 	 */
 	private static class StandardRepeatableContainers extends RepeatableContainers {
 
 		private static final Object NONE = new Object();
 
+		//单例模式
 		private static final StandardRepeatableContainers INSTANCE = new StandardRepeatableContainers();
 
 		StandardRepeatableContainers() {
@@ -154,6 +160,7 @@ public abstract class RepeatableContainers {
 		@Override
 		@Nullable
 		Annotation[] findRepeatedAnnotations(Annotation annotation) {
+			// 获取注解中value()属性方法（返回类型为注解数组，且注解含@Repeatable）
 			Method method = getRepeatedAnnotationsMethod(annotation.annotationType());
 			if (method != null) {
 				return (Annotation[]) AnnotationUtils.invokeAnnotationMethod(method, annotation);
@@ -168,10 +175,31 @@ public abstract class RepeatableContainers {
 			return (result != NONE ? (Method) result : null);
 		}
 
+		/**
+		 * 尝试找到给定注解类型的属性方法是value()，并且其返回类型是数组（元素类型是数组且含@Repeatable），若找到则返回这个Method
+		 * @param annotationType 注解类型
+		 * @return NONE 或 具体的Method
+		 */
 		private static Object computeRepeatedAnnotationsMethod(Class<? extends Annotation> annotationType) {
+			// 获取注解类型定义的所有合法的属性方法
 			AttributeMethods methods = AttributeMethods.forAnnotationType(annotationType);
+			//拿到注解中定义的value()方法
 			Method method = methods.get(MergedAnnotation.VALUE);
 			if (method != null) {
+				//返回类型是Annotation数组，并且数组的元素含java.lang.annotation.Repeatable注解
+				/*
+				如：
+				@interface A{
+				    B[] value();
+				}
+
+				@Repeatable
+				@interface B{
+				    String name();
+				}
+
+				@A的value方法返回类型是@B的数组，并且@B含有@Repeatable注解
+				 */
 				Class<?> returnType = method.getReturnType();
 				if (returnType.isArray()) {
 					Class<?> componentType = returnType.getComponentType();

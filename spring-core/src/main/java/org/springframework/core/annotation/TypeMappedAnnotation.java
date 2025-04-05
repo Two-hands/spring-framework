@@ -16,22 +16,17 @@
 
 package org.springframework.core.annotation;
 
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 
 /**
  * {@link MergedAnnotation} that adapts attributes from a root annotation by
@@ -613,7 +608,9 @@ final class TypeMappedAnnotation<A extends Annotation> extends AbstractMergedAnn
 			Class<A> annotationType, @Nullable Map<String, ?> attributes) {
 
 		Assert.notNull(annotationType, "Annotation type must not be null");
+		//根据注解类型（annotationType）构建其对应的AnnotationTypeMappings
 		AnnotationTypeMappings mappings = AnnotationTypeMappings.forAnnotationType(annotationType);
+		//获取AnnotationTypeMappings的首个AnnotationTypeMapping（annotationType的解析结果，不含其元注解的解析）
 		return new TypeMappedAnnotation<>(
 				mappings.get(0), classLoader, source, attributes, TypeMappedAnnotation::extractFromMap, 0);
 	}

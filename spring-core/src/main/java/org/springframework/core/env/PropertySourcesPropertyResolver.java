@@ -19,15 +19,7 @@ package org.springframework.core.env;
 import org.springframework.lang.Nullable;
 
 /**
- * {@link PropertyResolver} implementation that resolves property values against
- * an underlying set of {@link PropertySources}.
- *
- * @author Chris Beams
- * @author Juergen Hoeller
- * @since 3.1
- * @see PropertySource
- * @see PropertySources
- * @see AbstractEnvironment
+ * 属性解析器：根据propertySources属性源集解析属性值
  */
 public class PropertySourcesPropertyResolver extends AbstractPropertyResolver {
 
@@ -74,6 +66,15 @@ public class PropertySourcesPropertyResolver extends AbstractPropertyResolver {
 		return getProperty(key, String.class, false);
 	}
 
+
+	/**
+	 * 根据key获取其属性值，转换为给定类型返回
+	 * @param key 属性值的key
+	 * @param targetValueType 获取目标属性值需要转换的类型
+	 * @param resolveNestedPlaceholders 属性值若是字符串，是否需要解析值中的占位符（有的话）？ true - 解析并替换
+	 * @return 属性值
+	 * @param <T> 属性值类型
+	 */
 	@Nullable
 	protected <T> T getProperty(String key, Class<T> targetValueType, boolean resolveNestedPlaceholders) {
 		if (this.propertySources != null) {
@@ -82,12 +83,19 @@ public class PropertySourcesPropertyResolver extends AbstractPropertyResolver {
 					logger.trace("Searching for key '" + key + "' in PropertySource '" +
 							propertySource.getName() + "'");
 				}
+				// 遍历属性源，尝试按序从属性源中获取属性值
 				Object value = propertySource.getProperty(key);
 				if (value != null) {
+					//找到属性值：
+					//  resolveNestedPlaceholders - 是否尝试解析属性值中的占位符？
+					//  value instanceof String - 若需要解析，属性值类型必须是字符串
 					if (resolveNestedPlaceholders && value instanceof String string) {
+						//尝试解析属性值中的占位符（若有占位符的话）
 						value = resolveNestedPlaceholders(string);
 					}
+
 					logKeyFound(key, propertySource, value);
+					//属性值类型转换
 					return convertValueIfNecessary(value, targetValueType);
 				}
 			}

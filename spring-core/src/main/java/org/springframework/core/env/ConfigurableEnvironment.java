@@ -19,140 +19,81 @@ package org.springframework.core.env;
 import java.util.Map;
 
 /**
- * Configuration interface to be implemented by most if not all {@link Environment} types.
- * Provides facilities for setting active and default profiles and manipulating underlying
- * property sources. Allows clients to set and validate required properties, customize the
- * conversion service and more through the {@link ConfigurablePropertyResolver}
- * superinterface.
+ * <pre>
+ * 可以自由激活配置文件集、合并多个Environment数据
+ * 可以操作环境中的属性源：环境中的属性（PropertySource）可以自由的被移除、排序、替换，向环境中添加新属性，如：
+ *   1、向环境中添加一个最高优先级的PropertySource：
+ *        ConfigurableEnvironment environment = new StandardEnvironment();
+ *        MutablePropertySources propertySources = environment.getPropertySources();
+ *        Map&lt;String, Object&gt; myMap = new HashMap&lt;&gt;();
+ *        myMap.put("xyz", "myValue");
+ *        propertySources.addFirst(new MapPropertySource("MY_MAP", myMap));
  *
- * <h2>Manipulating property sources</h2>
- * <p>Property sources may be removed, reordered, or replaced; and additional
- * property sources may be added using the {@link MutablePropertySources}
- * instance returned from {@link #getPropertySources()}. The following examples
- * are against the {@link StandardEnvironment} implementation of
- * {@code ConfigurableEnvironment}, but are generally applicable to any implementation,
- * though particular default property sources may differ.
+ *   2、从环境中移除systemProperties属性源：
+ *        MutablePropertySources propertySources = environment.getPropertySources();
+ *        propertySources.remove(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME)
  *
- * <h4>Example: adding a new property source with highest search priority</h4>
- * <pre class="code">
- * ConfigurableEnvironment environment = new StandardEnvironment();
- * MutablePropertySources propertySources = environment.getPropertySources();
- * Map&lt;String, Object&gt; myMap = new HashMap&lt;&gt;();
- * myMap.put("xyz", "myValue");
- * propertySources.addFirst(new MapPropertySource("MY_MAP", myMap));
- * </pre>
+ *   3、替换环境中的StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME：
+ *        MutablePropertySources propertySources = environment.getPropertySources();
+ *        MockPropertySource mockEnvVars = new MockPropertySource().withProperty("xyz", "myValue");
+ *        propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mockEnvVars);
  *
- * <h4>Example: removing the default system properties property source</h4>
- * <pre class="code">
- * MutablePropertySources propertySources = environment.getPropertySources();
- * propertySources.remove(StandardEnvironment.SYSTEM_PROPERTIES_PROPERTY_SOURCE_NAME)
- * </pre>
- *
- * <h4>Example: mocking the system environment for testing purposes</h4>
- * <pre class="code">
- * MutablePropertySources propertySources = environment.getPropertySources();
- * MockPropertySource mockEnvVars = new MockPropertySource().withProperty("xyz", "myValue");
- * propertySources.replace(StandardEnvironment.SYSTEM_ENVIRONMENT_PROPERTY_SOURCE_NAME, mockEnvVars);
- * </pre>
- *
- * When an {@link Environment} is being used by an {@code ApplicationContext}, it is
- * important that any such {@code PropertySource} manipulations be performed
- * <em>before</em> the context's {@link
- * org.springframework.context.support.AbstractApplicationContext#refresh() refresh()}
- * method is called. This ensures that all property sources are available during the
- * container bootstrap process, including use by {@linkplain
- * org.springframework.context.support.PropertySourcesPlaceholderConfigurer property
- * placeholder configurers}.
- *
- * @author Chris Beams
- * @since 3.1
- * @see StandardEnvironment
- * @see org.springframework.context.ConfigurableApplicationContext#getEnvironment
+ *  注意：在AbstractApplicationContext#refresh()调用前，确保Environment中所有PropertySource都以准备就绪，
+ *  确保容器启动时能够正常使用Environment的属性值（如：容器中的占位符处理）
+ *  注意：若在{@code ApplicationContext}中使用{@link Environment}，要确保环境的任何操作都
  */
 public interface ConfigurableEnvironment extends Environment, ConfigurablePropertyResolver {
 
 	/**
-	 * Specify the set of profiles active for this {@code Environment}. Profiles are
-	 * evaluated during container bootstrap to determine whether bean definitions
-	 * should be registered with the container.
-	 * <p>Any existing active profiles will be replaced with the given arguments; call
-	 * with zero arguments to clear the current set of active profiles. Use
-	 * {@link #addActiveProfile} to add a profile while preserving the existing set.
-	 * @throws IllegalArgumentException if any profile is null, empty or whitespace-only
-	 * @see #addActiveProfile
-	 * @see #setDefaultProfiles
-	 * @see org.springframework.context.annotation.Profile
-	 * @see AbstractEnvironment#ACTIVE_PROFILES_PROPERTY_NAME
+	 * 设置环境{@code Environment}中应该激活的配置文件集（可以多个）
 	 */
 	void setActiveProfiles(String... profiles);
 
+
 	/**
-	 * Add a profile to the current set of active profiles.
-	 * @throws IllegalArgumentException if the profile is null, empty or whitespace-only
-	 * @see #setActiveProfiles
+	 * 设置环境{@code Environment}中应该激活的配置文件
 	 */
 	void addActiveProfile(String profile);
 
+
 	/**
-	 * Specify the set of profiles to be made active by default if no other profiles
-	 * are explicitly made active through {@link #setActiveProfiles}.
-	 * @throws IllegalArgumentException if any profile is null, empty or whitespace-only
-	 * @see AbstractEnvironment#DEFAULT_PROFILES_PROPERTY_NAME
+	 * 设置环境{@code Environment}中应该激活的默认配置文件（可以多个）
+	 * <b>前提是没有明确调用{@link #setActiveProfiles}、{@link #addActiveProfile}进行配置文件激活</b>
 	 */
 	void setDefaultProfiles(String... profiles);
 
 	/**
-	 * Return the {@link PropertySources} for this {@code Environment} in mutable form,
-	 * allowing for manipulation of the set of {@link PropertySource} objects that should
-	 * be searched when resolving properties against this {@code Environment} object.
-	 * The various {@link MutablePropertySources} methods such as
-	 * {@link MutablePropertySources#addFirst addFirst},
-	 * {@link MutablePropertySources#addLast addLast},
-	 * {@link MutablePropertySources#addBefore addBefore} and
-	 * {@link MutablePropertySources#addAfter addAfter} allow for fine-grained control
-	 * over property source ordering. This is useful, for example, in ensuring that
-	 * certain user-defined property sources have search precedence over default property
-	 * sources such as the set of system properties or the set of system environment
-	 * variables.
-	 * @see AbstractEnvironment#customizePropertySources
+	 * 返回环境中的所有属性源（封装到{@link PropertySources}中），允许操作PropertySources来搜索环境中的属性值
+	 * PropertySources提供的方法{@link MutablePropertySources#addFirst addFirst}、
+	 * {@link MutablePropertySources#addLast addLast}、
+	 * {@link MutablePropertySources#addBefore addBefore}和
+	 * {@link MutablePropertySources#addAfter addAfter}用于用户自定义控制配置源的顺序，以达到自定义控制搜索数据源的优先级
 	 */
 	MutablePropertySources getPropertySources();
 
+
 	/**
-	 * Return the value of {@link System#getProperties()}.
-	 * <p>Note that most {@code Environment} implementations will include this system
-	 * properties map as a default {@link PropertySource} to be searched. Therefore, it is
-	 * recommended that this method not be used directly unless bypassing other property
-	 * sources is expressly intended.
+	 * <pre>
+	 * {@link System#getProperties()}的返回值
+	 * 返回环境中的SystemProperties属性（JVM定义的相关的属性，如：-Dxx）
+	 * </pre>
 	 */
 	Map<String, Object> getSystemProperties();
 
 	/**
-	 * Return the value of {@link System#getenv()}.
-	 * <p>Note that most {@link Environment} implementations will include this system
-	 * environment map as a default {@link PropertySource} to be searched. Therefore, it
-	 * is recommended that this method not be used directly unless bypassing other
-	 * property sources is expressly intended.
+	 * <pre>
+	 * {@link System#getenv()}的返回值
+	 * 返回环境中SystemEnvironment属性（操作系统定义的相关属性，如：路径配置、系统信息）
+	 * </pre>
 	 */
 	Map<String, Object> getSystemEnvironment();
 
 	/**
-	 * Append the given parent environment's active profiles, default profiles and
-	 * property sources to this (child) environment's respective collections of each.
-	 * <p>For any identically-named {@code PropertySource} instance existing in both
-	 * parent and child, the child instance is to be preserved and the parent instance
-	 * discarded. This has the effect of allowing overriding of property sources by the
-	 * child as well as avoiding redundant searches through common property source types,
-	 * e.g. system environment and system properties.
-	 * <p>Active and default profile names are also filtered for duplicates, to avoid
-	 * confusion and redundant storage.
-	 * <p>The parent environment remains unmodified in any case. Note that any changes to
-	 * the parent environment occurring after the call to {@code merge} will not be
-	 * reflected in the child. Therefore, care should be taken to configure parent
-	 * property sources and profile information prior to calling {@code merge}.
-	 * @param parent the environment to merge with
-	 * @since 3.1.2
-	 * @see org.springframework.context.support.AbstractApplicationContext#setParent
+	 * <pre>
+	 * 将parent的环境信息（配置文件和属性）添加到当前子环境中来
+	 * 若parent环境与当前子环境中都包含同名的PropertySource，移除前者中的PropertySource（允许子环境覆盖父环境）,配置文件（激活、默认）也会去重
+	 * <b>当前方法只是将父环境中的信息"拷贝"过来，若后面父环境内容发生变化，子环境不可见</b>
+	 * </pre>
 	 */
 	void merge(ConfigurableEnvironment parent);
 

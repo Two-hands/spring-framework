@@ -17,6 +17,11 @@
 package org.springframework.core.env;
 
 /**
+ * 应用运行时的环境信息，应用运行时环境包含2个主要方面：配置文件（profiles）和属性（properties）
+ * 属性信息可以通过父接口{@link PropertyResolver}定义的方法进行访问
+ */
+
+/**
  * Interface representing the environment in which the current application is running.
  * Models two key aspects of the application environment: <em>profiles</em> and
  * <em>properties</em>. Methods related to property access are exposed via the
@@ -72,80 +77,48 @@ package org.springframework.core.env;
 public interface Environment extends PropertyResolver {
 
 	/**
-	 * Return the set of profiles explicitly made active for this environment. Profiles
-	 * are used for creating logical groupings of bean definitions to be registered
-	 * conditionally, for example based on deployment environment. Profiles can be
-	 * activated by setting {@linkplain AbstractEnvironment#ACTIVE_PROFILES_PROPERTY_NAME
-	 * "spring.profiles.active"} as a system property or by calling
-	 * {@link ConfigurableEnvironment#setActiveProfiles(String...)}.
-	 * <p>If no profiles have explicitly been specified as active, then any
-	 * {@linkplain #getDefaultProfiles() default profiles} will automatically be activated.
-	 * @see #getDefaultProfiles
-	 * @see ConfigurableEnvironment#setActiveProfiles
-	 * @see AbstractEnvironment#ACTIVE_PROFILES_PROPERTY_NAME
+	 * 返回显示激活的配置文件集，配置文件可以通过{@linkplain AbstractEnvironment#ACTIVE_PROFILES_PROPERTY_NAME
+	 * 	"spring.profiles.active"}或{@link ConfigurableEnvironment#setActiveProfiles(String...)}进行配置
+	 *  若没有明确指定需要激活的配置文件，默认配置文件将被激活
 	 */
 	String[] getActiveProfiles();
 
+
 	/**
-	 * Return the set of profiles to be active by default when no active profiles have
-	 * been set explicitly.
-	 * @see #getActiveProfiles
-	 * @see ConfigurableEnvironment#setDefaultProfiles
-	 * @see AbstractEnvironment#DEFAULT_PROFILES_PROPERTY_NAME
+	 * 返回默认激活的配置文件集（当没有明确指定激活配置文件集时）
 	 */
 	String[] getDefaultProfiles();
 
+
 	/**
-	 * Determine whether one of the given profile expressions matches the
-	 * {@linkplain #getActiveProfiles() active profiles} &mdash; or in the case
-	 * of no explicit active profiles, whether one of the given profile expressions
-	 * matches the {@linkplain #getDefaultProfiles() default profiles}.
-	 * <p>Profile expressions allow for complex, boolean profile logic to be
-	 * expressed &mdash; for example {@code "p1 & p2"}, {@code "(p1 & p2) | p3"},
-	 * etc. See {@link Profiles#of(String...)} for details on the supported
-	 * expression syntax.
-	 * <p>This method is a convenient shortcut for
-	 * {@code env.acceptsProfiles(Profiles.of(profileExpressions))}.
-	 * @since 5.3.28
-	 * @see Profiles#of(String...)
-	 * @see #acceptsProfiles(Profiles)
+	 * <pre>
+	 * 通过表达式判断是否激活了指定的配置文件集，如：
+	 *  1、{@code "p1 & p2"} ：判断p1和p2配置文件是否都激活？
+	 *  2、{@code "(p1 & p2) | p3"}：判断是否p1和p2配置文件都激活，或p3配置文件激活
+	 *
+	 * 表达式语句支持可以见{@link Profiles#of(String...)}
+	 * 多个表达式只要一个满足就返回true
+	 * </pre>
 	 */
 	default boolean matchesProfiles(String... profileExpressions) {
 		return acceptsProfiles(Profiles.of(profileExpressions));
 	}
 
+
 	/**
-	 * Determine whether one or more of the given profiles is active &mdash; or
-	 * in the case of no explicit {@linkplain #getActiveProfiles() active profiles},
-	 * whether one or more of the given profiles is included in the set of
-	 * {@linkplain #getDefaultProfiles() default profiles}.
-	 * <p>If a profile begins with '!' the logic is inverted, meaning this method
-	 * will return {@code true} if the given profile is <em>not</em> active. For
-	 * example, {@code env.acceptsProfiles("p1", "!p2")} will return {@code true}
-	 * if profile 'p1' is active or 'p2' is not active.
-	 * @throws IllegalArgumentException if called with a {@code null} array, an
-	 * empty array, zero arguments or if any profile is {@code null}, empty, or
-	 * whitespace only
-	 * @see #getActiveProfiles
-	 * @see #getDefaultProfiles
-	 * @see #matchesProfiles(String...)
-	 * @see #acceptsProfiles(Profiles)
-	 * @deprecated as of 5.1 in favor of {@link #acceptsProfiles(Profiles)} or
-	 * {@link #matchesProfiles(String...)}
+	 * <pre>
+	 * 判定环境中是否激活了指定的配置文件集？ true - 激活
+	 * 如：{@code env.acceptsProfiles("p1", "!p2")}返回{@code true}表示配置文件p1为激活状态，p2为未激活状态
+	 * </pre>
 	 */
 	@Deprecated
 	boolean acceptsProfiles(String... profiles);
 
+
 	/**
-	 * Determine whether the given {@link Profiles} predicate matches the
-	 * {@linkplain #getActiveProfiles() active profiles} &mdash; or in the case
-	 * of no explicit active profiles, whether the given {@code Profiles} predicate
-	 * matches the {@linkplain #getDefaultProfiles() default profiles}.
-	 * <p>If you wish provide profile expressions directly as strings, use
-	 * {@link #matchesProfiles(String...)} instead.
-	 * @since 5.1
-	 * @see #matchesProfiles(String...)
-	 * @see Profiles#of(String...)
+	 * 判定环境中是否激活了指定的配置文件集？ true - 激活
+	 * @param profiles 配置文件集
+	 * @return true - 配置文件集均为激活状态
 	 */
 	boolean acceptsProfiles(Profiles profiles);
 

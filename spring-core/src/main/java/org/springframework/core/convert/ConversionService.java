@@ -19,28 +19,15 @@ package org.springframework.core.convert;
 import org.springframework.lang.Nullable;
 
 /**
- * A service interface for type conversion. This is the entry point into the convert system.
- * Call {@link #convert(Object, Class)} to perform a thread-safe type conversion using this system.
- *
- * @author Keith Donald
- * @author Phillip Webb
- * @since 3.0
+ * 类型转换服务
  */
 public interface ConversionService {
 
+
 	/**
-	 * Return {@code true} if objects of {@code sourceType} can be converted to the {@code targetType}.
-	 * <p>If this method returns {@code true}, it means {@link #convert(Object, Class)} is capable
-	 * of converting an instance of {@code sourceType} to {@code targetType}.
-	 * <p>Special note on collections, arrays, and maps types:
-	 * For conversion between collection, array, and map types, this method will return {@code true}
-	 * even though a convert invocation may still generate a {@link ConversionException} if the
-	 * underlying elements are not convertible. Callers are expected to handle this exceptional case
-	 * when working with collections and maps.
-	 * @param sourceType the source type to convert from (may be {@code null} if source is {@code null})
-	 * @param targetType the target type to convert to (required)
-	 * @return {@code true} if a conversion can be performed, {@code false} if not
-	 * @throws IllegalArgumentException if {@code targetType} is {@code null}
+	 * 判断当前类型服务是否可以将类型sourceType转换为targetType类型，
+	 * 若为true，表示可以调用{@link #convert(Object, Class)}方法进行类型转换。
+	 * 注意：Collection、Map、array之间的转换问题：虽然这个方法会返回true，但是真正调用convert方法时若底层元素类型无法被转换，会抛异常
 	 */
 	boolean canConvert(@Nullable Class<?> sourceType, Class<?> targetType);
 

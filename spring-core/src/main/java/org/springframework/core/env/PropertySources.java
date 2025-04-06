@@ -16,18 +16,14 @@
 
 package org.springframework.core.env;
 
+import org.springframework.lang.Nullable;
+
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.springframework.lang.Nullable;
 
 /**
- * Holder containing one or more {@link PropertySource} objects.
- *
- * @author Chris Beams
- * @author Juergen Hoeller
- * @since 3.1
- * @see PropertySource
+ * 持有一个或多个PropertySource
  */
 public interface PropertySources extends Iterable<PropertySource<?>> {
 
@@ -39,15 +35,18 @@ public interface PropertySources extends Iterable<PropertySource<?>> {
 		return StreamSupport.stream(spliterator(), false);
 	}
 
+
 	/**
-	 * Return whether a property source with the given name is contained.
-	 * @param name the {@linkplain PropertySource#getName() name of the property source} to find
+	 * 是否含name[属性源名称，唯一标识]的属性源？
+	 * @param name 属性源标识名称
+	 * @return true - 包含name的属性源
 	 */
 	boolean contains(String name);
 
 	/**
-	 * Return the property source with the given name, {@code null} if not found.
-	 * @param name the {@linkplain PropertySource#getName() name of the property source} to find
+	 * 通过name[属性源名称，唯一标识]获取属性源
+	 * @param name 属性源标识名称
+	 * @return 属性源
 	 */
 	@Nullable
 	PropertySource<?> get(String name);

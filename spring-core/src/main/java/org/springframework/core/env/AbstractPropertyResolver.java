@@ -16,13 +16,8 @@
 
 package org.springframework.core.env;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.core.convert.support.DefaultConversionService;
@@ -31,6 +26,10 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.PropertyPlaceholderHelper;
 import org.springframework.util.SystemPropertyUtils;
+
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Abstract base class for resolving properties against any underlying source.
@@ -46,12 +45,15 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 	@Nullable
 	private volatile ConfigurableConversionService conversionService;
 
+	// 嵌套占位符解析器，当嵌套占位符无法被解析时，忽略错误
 	@Nullable
 	private PropertyPlaceholderHelper nonStrictHelper;
 
+	// 嵌套占位符解析器，当嵌套占位符无法被解析时，需要报错
 	@Nullable
 	private PropertyPlaceholderHelper strictHelper;
 
+	// 当占位符无法被正确识别解析时，是否忽略？true - 忽略
 	private boolean ignoreUnresolvableNestedPlaceholders = false;
 
 	private String placeholderPrefix = SystemPropertyUtils.PLACEHOLDER_PREFIX;
@@ -255,8 +257,7 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 		}
 		ConversionService conversionServiceToUse = this.conversionService;
 		if (conversionServiceToUse == null) {
-			// Avoid initialization of shared DefaultConversionService if
-			// no standard type conversion is needed in the first place...
+			//避免DefaultConversionService还未初始化成功，首先使用标准类型转换
 			if (ClassUtils.isAssignableValue(targetType, value)) {
 				return (T) value;
 			}
@@ -267,10 +268,7 @@ public abstract class AbstractPropertyResolver implements ConfigurablePropertyRe
 
 
 	/**
-	 * Retrieve the specified property as a raw String,
-	 * i.e. without resolution of nested placeholders.
-	 * @param key the property name to resolve
-	 * @return the property value or {@code null} if none found
+	 * 获取属性源中key对应的原始字符串属性值（若字符串属性值含占位符，不用解析）
 	 */
 	@Nullable
 	protected abstract String getPropertyAsRawString(String key);

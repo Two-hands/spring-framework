@@ -19,14 +19,9 @@ package org.springframework.core.env;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.lang.Nullable;
 
+
 /**
- * Configuration interface to be implemented by most if not all {@link PropertyResolver}
- * types. Provides facilities for accessing and customizing the
- * {@link org.springframework.core.convert.ConversionService ConversionService}
- * used when converting property values from one type to another.
- *
- * @author Chris Beams
- * @since 3.1
+ * 提供[解析Environment属性值]的配置化入口，通过自定义{@link org.springframework.core.convert.ConversionService}来转换属性值类型
  */
 public interface ConfigurablePropertyResolver extends PropertyResolver {
 
@@ -58,47 +53,37 @@ public interface ConfigurablePropertyResolver extends PropertyResolver {
 	void setConversionService(ConfigurableConversionService conversionService);
 
 	/**
-	 * Set the prefix that placeholders replaced by this resolver must begin with.
+	 * 定义占位符必须以特定标识开头，一般是"${"
 	 */
 	void setPlaceholderPrefix(String placeholderPrefix);
 
+
 	/**
-	 * Set the suffix that placeholders replaced by this resolver must end with.
+	 * 定义占位符必须以特定标识结尾，一般是"}"
 	 */
 	void setPlaceholderSuffix(String placeholderSuffix);
 
+
 	/**
-	 * Specify the separating character between the placeholders replaced by this
-	 * resolver and their associated default value, or {@code null} if no such
-	 * special character should be processed as a value separator.
+	 * 定义占位符中的k-v分隔符，当指定后，若k对应的属性值不存在，则使用v作为默认值，一般是":"
 	 */
 	void setValueSeparator(@Nullable String valueSeparator);
 
 	/**
-	 * Set whether to throw an exception when encountering an unresolvable placeholder
-	 * nested within the value of a given property. A {@code false} value indicates strict
-	 * resolution, i.e. that an exception will be thrown. A {@code true} value indicates
-	 * that unresolvable nested placeholders should be passed through in their unresolved
-	 * ${...} form.
-	 * <p>Implementations of {@link #getProperty(String)} and its variants must inspect
-	 * the value set here to determine correct behavior when property values contain
-	 * unresolvable placeholders.
-	 * @since 3.2
+	 * 当内嵌占位符解析失败时（即：占位符对应的值中还含有占位符，需要再次解析），是否要报错？
+	 * @param ignoreUnresolvableNestedPlaceholders true - 忽略解析失败的情况，false - 报错
 	 */
 	void setIgnoreUnresolvableNestedPlaceholders(boolean ignoreUnresolvableNestedPlaceholders);
 
+
 	/**
-	 * Specify which properties must be present, to be verified by
-	 * {@link #validateRequiredProperties()}.
+	 * 定义环境中必须存在的属性值，这些必须的属性值将在{@link #validateRequiredProperties()}中校验
 	 */
 	void setRequiredProperties(String... requiredProperties);
 
+
 	/**
-	 * Validate that each of the properties specified by
-	 * {@link #setRequiredProperties} is present and resolves to a
-	 * non-{@code null} value.
-	 * @throws MissingRequiredPropertiesException if any of the required
-	 * properties are not resolvable.
+	 * 校验必须存在的属性值是否存在，若不存在则抛异常
 	 */
 	void validateRequiredProperties() throws MissingRequiredPropertiesException;
 

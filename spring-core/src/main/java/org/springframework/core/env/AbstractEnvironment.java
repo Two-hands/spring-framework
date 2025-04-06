@@ -16,21 +16,16 @@
 
 package org.springframework.core.env;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.springframework.core.SpringProperties;
 import org.springframework.core.convert.support.ConfigurableConversionService;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
+
+import java.util.*;
 
 /**
  * Abstract base class for {@link Environment} implementations. Supports the notion of
@@ -54,6 +49,7 @@ import org.springframework.util.StringUtils;
  */
 public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 
+
 	/**
 	 * System property that instructs Spring to ignore system environment variables,
 	 * i.e. to never attempt to retrieve such a variable via {@link System#getenv()}.
@@ -65,49 +61,30 @@ public abstract class AbstractEnvironment implements ConfigurableEnvironment {
 	 */
 	public static final String IGNORE_GETENV_PROPERTY_NAME = "spring.getenv.ignore";
 
-	/**
-	 * Name of property to set to specify active profiles: {@value}. Value may be comma
-	 * delimited.
-	 * <p>Note that certain shell environments such as Bash disallow the use of the period
-	 * character in variable names. Assuming that Spring's {@link SystemEnvironmentPropertySource}
-	 * is in use, this property may be specified as an environment variable as
-	 * {@code SPRING_PROFILES_ACTIVE}.
-	 * @see ConfigurableEnvironment#setActiveProfiles
-	 */
+	//设置需要激活的配置文件，多个配置文件值用逗号分割
+	// spring.profiles.active优先级高于spring.profiles.default
 	public static final String ACTIVE_PROFILES_PROPERTY_NAME = "spring.profiles.active";
 
-	/**
-	 * Name of property to set to specify profiles active by default: {@value}. Value may
-	 * be comma delimited.
-	 * <p>Note that certain shell environments such as Bash disallow the use of the period
-	 * character in variable names. Assuming that Spring's {@link SystemEnvironmentPropertySource}
-	 * is in use, this property may be specified as an environment variable as
-	 * {@code SPRING_PROFILES_DEFAULT}.
-	 * @see ConfigurableEnvironment#setDefaultProfiles
-	 */
+	//设置需要默认激活的配置文件，多个配置文件值用逗号分割；
+	// 若设置了spring.profiles.active，spring.profiles.default将被忽略
 	public static final String DEFAULT_PROFILES_PROPERTY_NAME = "spring.profiles.default";
 
-	/**
-	 * Name of reserved default profile name: {@value}. If no default profile names are
-	 * explicitly set and no active profile names are explicitly set, this profile will
-	 * automatically be activated by default.
-	 * @see #getReservedDefaultProfiles
-	 * @see ConfigurableEnvironment#setDefaultProfiles
-	 * @see ConfigurableEnvironment#setActiveProfiles
-	 * @see AbstractEnvironment#DEFAULT_PROFILES_PROPERTY_NAME
-	 * @see AbstractEnvironment#ACTIVE_PROFILES_PROPERTY_NAME
-	 */
+	//默认激活的配置文件名称（如果没有明确指明名称，将使用该名称）
 	public static final String RESERVED_DEFAULT_PROFILE_NAME = "default";
 
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	//激活的配置文件名称集
 	private final Set<String> activeProfiles = new LinkedHashSet<>();
 
+	//默认激活的配置文件集
 	private final Set<String> defaultProfiles = new LinkedHashSet<>(getReservedDefaultProfiles());
 
+	//所有属性源
 	private final MutablePropertySources propertySources;
 
+	//属性解析器
 	private final ConfigurablePropertyResolver propertyResolver;
 
 
